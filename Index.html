@@ -115,8 +115,54 @@
     @keyframes pulse { 0% { transform: scale(0.95); opacity: 0.8; } 100% { transform: scale(1.05); opacity: 1; } }
     .spinner-border.text-primary { border-color: var(--accent-color) !important; border-right-color: transparent !important; }
     
-    /* Thread Quote Styling */
     .thread-quote { border-left: 4px solid var(--accent-color); background-color: #ffffff; }
+
+    .btn-back {
+      background-color: #ffffff;
+      color: #475569;
+      border: 1px solid #cbd5e1;
+      transition: all 0.2s ease;
+    }
+    .btn-back:hover {
+      background-color: #f1f5f9;
+      color: var(--accent-color);
+      border-color: #94a3b8;
+    }
+
+    .swal2-popup {
+      border-radius: 20px !important;
+      padding: 2.5em 2em !important;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.15) !important;
+    }
+    .swal2-title {
+      font-weight: 700 !important;
+      color: #1e293b !important;
+    }
+    .swal2-html-container {
+      color: #475569 !important;
+      font-size: 1rem !important;
+    }
+    .swal2-actions {
+      margin-top: 1.5em !important;
+      gap: 12px;
+    }
+    .swal2-confirm {
+      border-radius: 10px !important;
+      font-weight: 600 !important;
+      padding: 12px 28px !important;
+      letter-spacing: 0.3px;
+    }
+    .swal2-cancel {
+      border-radius: 10px !important;
+      font-weight: 600 !important;
+      padding: 12px 28px !important;
+      background-color: #f1f5f9 !important;
+      color: #475569 !important;
+      letter-spacing: 0.3px;
+    }
+    .swal2-cancel:hover {
+      background-color: #e2e8f0 !important;
+    }
   </style>
 </head>
 <body>
@@ -225,7 +271,7 @@
       <div class="detail-container" v-else>
         
         <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
-          <button class="btn btn-outline-secondary btn-sm rounded px-3 fw-bold bg-white shadow-sm" @click="returnToInbox">
+          <button class="btn btn-back btn-sm rounded px-3 fw-bold shadow-sm" @click="returnToInbox">
             <i class="bi bi-arrow-left me-1"></i> Back to Inbox
           </button>
           <img src="https://d2nnykqiaju69u.cloudfront.net/pslife_photos/Maricel_temp/logos/megaworld%20lifestyel%20malls.png" alt="Logo" style="height: 35px;">
@@ -412,12 +458,11 @@
           google.script.run.withSuccessHandler(response => {
             let data = JSON.parse(response);
             
-            // SMART READ LOGIC: Mark as read if the current user already actioned it
             data.forEach(req => {
               if (req.history && req.history.length > 0) {
                 const lastLog = req.history[req.history.length - 1];
                 if (lastLog.actorEmail === this.activeUserEmail) {
-                  req.isRead = true; // Auto-read because it's "Action Done"
+                  req.isRead = true; 
                 }
               }
             });
@@ -491,7 +536,7 @@
           icon: 'question',
           showCancelButton: true,
           confirmButtonColor: actionCommand === 'Return to Sender' ? '#dc3545' : '#285A48',
-          cancelButtonColor: '#6c757d',
+          cancelButtonText: 'Cancel',
           confirmButtonText: 'Yes, Execute Action'
         }).then((result) => {
           if (result.isConfirmed) {
@@ -565,7 +610,7 @@
           icon: 'warning',
           showCancelButton: true,
           confirmButtonColor: '#dc3545',
-          cancelButtonColor: '#6c757d',
+          cancelButtonColor: '#f1f5f9',
           confirmButtonText: 'Yes, log out'
         }).then((result) => {
           if (result.isConfirmed) {
