@@ -2,7 +2,7 @@ const SPREADSHEET_ID = '1YAvZmCdWXbjOcJA-uUY40e6qVqzyiHcB06NpiPcz6y4';
 
 function doGet() {
   return HtmlService.createHtmlOutputFromFile('Index')
-    .setTitle('MSP Contract Portal - Approvals')
+    .setTitle("Approver's Portal")
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
 }
