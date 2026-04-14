@@ -35,80 +35,76 @@
     .btn-success:hover { background-color: var(--sidebar-bg); border-color: var(--sidebar-bg); }
 
     body { background-color: var(--app-bg); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    .app-wrapper { display: flex; height: 100vh; overflow: hidden; }
     
+    .app-root { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+    .app-body { display: flex; flex: 1; overflow: hidden; }
+    
+    .app-header { background: #ffffff; box-shadow: 0 1px 4px rgba(0,0,0,0.05); z-index: 1050; border-bottom: 1px solid #e2e8f0; }
+    .hamburger-btn { background: none; border: none; font-size: 1.5rem; color: #475569; transition: color 0.2s; cursor: pointer; }
+    .hamburger-btn:hover { color: var(--accent-color); }
+    .header-brand-area { width: 250px; display: flex; align-items: center; }
+
     .sidebar-panel { 
       width: 84px; 
       background-color: var(--sidebar-bg); 
       color: var(--sidebar-text); 
       display: flex; 
       flex-direction: column; 
-      padding: 20px 0; 
+      padding: 15px 0; 
       transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
       overflow-x: hidden;
       white-space: nowrap;
       z-index: 1000;
       border-right: 1px solid var(--sidebar-hover);
-      box-shadow: 2px 0 10px rgba(0,0,0,0.1);
     }
     
-    .sidebar-panel:hover {
-      width: 280px; 
-      box-shadow: 4px 0 15px rgba(0,0,0,0.15);
-    }
+    .sidebar-panel:hover, .sidebar-panel.pinned { width: 260px; box-shadow: 4px 0 15px rgba(0,0,0,0.05); }
 
-    .nav-text, .brand-text, .user-info {
-      opacity: 0;
-      transition: opacity 0.3s ease;
-      display: inline-block;
-      vertical-align: middle;
-      color: #ffffff;
-    }
+    .nav-text, .user-info, .expanded-badge { opacity: 0; transition: opacity 0.3s ease; display: inline-block; vertical-align: middle; color: #ffffff; }
     
-    .sidebar-panel:hover .nav-text,
-    .sidebar-panel:hover .brand-text,
-    .sidebar-panel:hover .user-info {
-      opacity: 1;
-    }
+    .sidebar-panel:hover .nav-text, .sidebar-panel.pinned .nav-text,
+    .sidebar-panel:hover .user-info, .sidebar-panel.pinned .user-info,
+    .sidebar-panel:hover .expanded-badge, .sidebar-panel.pinned .expanded-badge { opacity: 1; }
 
-    .nav-link { color: var(--sidebar-text); padding: 12px 22px; transition: all 0.2s; border-left: 4px solid transparent; display: flex; align-items: center; }
+    .nav-link { color: var(--sidebar-text); padding: 12px 22px; transition: all 0.2s; border-left: 4px solid transparent; display: flex; align-items: center; cursor: pointer; }
     .nav-link:hover { background-color: var(--sidebar-hover); color: #ffffff; }
     .nav-link.active { background-color: var(--sidebar-hover); color: #ffffff; border-left-color: var(--accent-light); }
-    .nav-link i { font-size: 1.3rem; width: 40px; text-align: center; display: inline-block; }
+    
+    .icon-container { width: 40px; text-align: center; display: inline-block; flex-shrink: 0; }
+    .nav-link i { font-size: 1.25rem; }
     .nav-link.active i { color: var(--accent-light); }
+
+    .collapsed-badge { position: absolute; top: -5px; right: 0; font-size: 0.65rem; padding: 0.25em 0.4em; opacity: 1; transition: opacity 0.2s; }
+    .sidebar-panel:hover .collapsed-badge, .sidebar-panel.pinned .collapsed-badge { opacity: 0; pointer-events: none; }
 
     .flex-spacer { flex: 1; }
     
-    .content-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .content-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; background-color: var(--app-bg); }
     
     .inbox-container { flex: 1; overflow-y: auto; background: #ffffff; border-radius: 12px; margin: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
-    .message-row { padding: 10px 20px; border-bottom: 1px solid #f1f3f4; cursor: pointer; display: flex; align-items: center; transition: all 0.2s ease; border-left: 4px solid transparent; }
-    .message-row:hover { background-color: #f8f9fa; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transform: translateY(-1px); z-index: 1; position: relative; }
+    
+    .message-row { padding: 8px 20px; border-bottom: 1px solid #f1f3f4; cursor: pointer; display: flex; align-items: center; transition: all 0.2s ease; border-left: 4px solid transparent; min-height: 52px; }
+    .message-row:hover { background-color: #f8f9fa; box-shadow: inset 1px 0 0 #dadce0, inset -1px 0 0 #dadce0, 0 1px 2px 0 rgba(60,64,67,.3); transform: translateY(-1px); z-index: 1; position: relative; border-radius: 4px; }
     
     .message-row.unread { font-weight: 700; background-color: #ffffff; color: #202124; border-left-color: var(--accent-color); }
     .message-row.read { color: #64748b; background-color: #f8fafc; font-weight: 400; }
     
-    .inbox-avatar {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: bold;
-      font-size: 0.85rem;
-      margin-right: 12px;
-      flex-shrink: 0;
-      transition: all 0.2s ease;
-    }
+    .row-actions { display: none; align-items: center; gap: 8px; margin-right: 10px; }
+    .message-row:hover .row-actions { display: flex; }
+    .message-row:hover .timestamp-text { display: none; } 
+    .action-icon-btn { color: #5f6368; background: none; border: none; border-radius: 50%; width: 32px; height: 32px; display: flex; justify-content: center; align-items: center; transition: background 0.2s; }
+    .action-icon-btn:hover { background-color: #e2e8f0; color: var(--accent-color); }
+
+    .star-btn { font-size: 1.3rem; cursor: pointer; transition: transform 0.2s ease; padding: 0 5px; }
+    .star-btn:hover { transform: scale(1.2); }
+
+    .inbox-avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.85rem; margin-right: 12px; flex-shrink: 0; transition: all 0.2s ease; }
     .unread .inbox-avatar { background-color: var(--accent-color); color: #ffffff; }
     .read .inbox-avatar { background-color: #e2e8f0; color: #64748b; }
 
     .detail-container { flex: 1; overflow-y: auto; background: #ffffff; margin: 20px; padding: 30px 40px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
     .info-card { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; transition: transform 0.2s; }
     .info-card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); }
-    
-    .app-header { background: #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.03); border-bottom: 1px solid #e2e8f0; z-index: 10; }
     
     .loader-screen { position: fixed; inset: 0; background: rgba(255, 255, 255, 0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; }
     .loader-screen img { max-width: 250px; animation: pulse 1.8s infinite alternate ease-in-out; }
@@ -117,294 +113,356 @@
     
     .thread-quote { border-left: 4px solid var(--accent-color); background-color: #ffffff; }
 
-    .btn-back {
-      background-color: #ffffff;
-      color: #475569;
-      border: 1px solid #cbd5e1;
-      transition: all 0.2s ease;
-    }
-    .btn-back:hover {
-      background-color: #f1f5f9;
-      color: var(--accent-color);
-      border-color: #94a3b8;
-    }
+    .btn-back { background-color: #ffffff; color: #475569; border: 1px solid #cbd5e1; transition: all 0.2s ease; }
+    .btn-back:hover { background-color: #f1f5f9; color: var(--accent-color); border-color: #94a3b8; }
 
-    .swal2-popup {
-      border-radius: 20px !important;
-      padding: 2.5em 2em !important;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.15) !important;
-    }
-    .swal2-title {
-      font-weight: 700 !important;
-      color: #1e293b !important;
-    }
-    .swal2-html-container {
-      color: #475569 !important;
-      font-size: 1rem !important;
-    }
-    .swal2-actions {
-      margin-top: 1.5em !important;
-      gap: 12px;
-    }
-    .swal2-confirm {
-      border-radius: 10px !important;
-      font-weight: 600 !important;
-      padding: 12px 28px !important;
-      letter-spacing: 0.3px;
-    }
-    .swal2-cancel {
-      border-radius: 10px !important;
-      font-weight: 600 !important;
-      padding: 12px 28px !important;
-      background-color: #f1f5f9 !important;
-      color: #475569 !important;
-      letter-spacing: 0.3px;
-    }
-    .swal2-cancel:hover {
-      background-color: #e2e8f0 !important;
-    }
+    .swal2-popup { border-radius: 20px !important; padding: 2.5em 2em !important; box-shadow: 0 20px 40px rgba(0,0,0,0.15) !important; }
+    .swal2-title { font-weight: 700 !important; color: #1e293b !important; }
+    .swal2-confirm { border-radius: 10px !important; font-weight: 600 !important; padding: 12px 28px !important; letter-spacing: 0.3px; }
+    .swal2-cancel { border-radius: 10px !important; font-weight: 600 !important; padding: 12px 28px !important; background-color: #f1f5f9 !important; color: #475569 !important; }
+    
+    .form-check-input { cursor: pointer; border-color: #cbd5e1; }
+    .form-check-input:checked { background-color: var(--accent-color); border-color: var(--accent-color); }
   </style>
 </head>
 <body>
 
 <div id="approvalApp">
-  <div v-if="appLoading || processingAction" class="loader-screen">
-    <img src="https://d2nnykqiaju69u.cloudfront.net/pslife_photos/Maricel_temp/logos/megaworld%20lifestyel%20malls.png" alt="Megaworld Lifestyle Malls">
-    <div class="spinner-border text-primary mt-4" role="status" v-if="processingAction"></div>
-    <h5 class="mt-4 text-secondary fw-bold">{{ loaderMessage }}</h5>
+
+  <div v-if="!isAuthenticated" class="d-flex align-items-center justify-content-center" style="height: 100vh; background-color: var(--app-bg);">
+    <div class="card p-5 shadow border-0 text-center" style="max-width: 400px; width: 100%; border-radius: 20px;">
+      <img src="https://d2nnykqiaju69u.cloudfront.net/pslife_photos/Maricel_temp/logos/megaworld%20lifestyel%20malls.png" alt="Logo" class="mb-4 mx-auto" style="height: 50px;">
+      <h4 class="mb-4 text-dark fw-bold">Secure Portal Login</h4>
+      <p class="text-muted small mb-4">Please enter your credentials to access your tagged requests and approvals.</p>
+      <input type="email" class="form-control mb-3 p-3 bg-light" placeholder="Email Address">
+      <input type="password" class="form-control mb-4 p-3 bg-light" placeholder="Password">
+      <button class="btn btn-primary w-100 fw-bold p-3 rounded-pill" @click="simulateLogin">Login to Workspace</button>
+    </div>
   </div>
 
-  <div class="app-wrapper" v-show="!appLoading">
+  <div v-else>
     
-    <aside class="sidebar-panel">
-      <div class="d-flex align-items-center mb-4 pb-3 border-bottom" style="border-color: var(--sidebar-hover) !important; height: 60px; padding: 0 22px;">
-        <i class="bi bi-shield-check fs-4" style="color: var(--accent-light); width: 40px; text-align: center;"></i>
-        <h5 class="mb-0 fw-bold brand-text ms-1">Portal Approvals</h5>
-      </div>
+    <div v-if="appLoading || processingAction" class="loader-screen">
+      <img src="https://d2nnykqiaju69u.cloudfront.net/pslife_photos/Maricel_temp/logos/megaworld%20lifestyel%20malls.png" alt="Megaworld Lifestyle Malls">
+      <div class="spinner-border text-primary mt-4" role="status" v-if="processingAction"></div>
+      <h5 class="mt-4 text-secondary fw-bold">{{ loaderMessage }}</h5>
+    </div>
+
+    <div class="app-root" v-show="!appLoading">
       
-      <ul class="nav flex-column mb-auto">
-        <li class="nav-item">
-          <a href="#" class="nav-link active" @click.prevent="returnToInbox">
-            <i class="bi bi-inbox-fill"></i> 
-            <span class="nav-text fw-bold">Inbox</span>
-            <span class="badge bg-danger rounded-pill ms-auto nav-text" v-if="countUnread > 0">{{ countUnread }}</span>
-          </a>
-        </li>
-      </ul>
-      
-      <div class="flex-spacer"></div>
-      
-      <div class="mt-4 pt-3 border-top" style="border-color: var(--sidebar-hover) !important; padding-bottom: 20px;">
-        
-        <div class="d-flex align-items-center mb-3" style="padding: 0 22px;">
-          <div class="bg-primary text-white rounded-circle d-flex justify-content-center align-items-center flex-shrink-0 shadow-sm" style="width:40px; height:40px; font-weight:bold; font-size: 1.1rem;">
-            {{ generateInitials(activeUserEmail) }}
-          </div>
-          <div class="text-truncate small fw-bold ms-3 user-info" :title="activeUserEmail">
-            {{ activeUserEmail }}
-          </div>
-        </div>
-        
-        <div style="padding: 0 22px;">
-          <button class="btn btn-outline-danger d-flex align-items-center p-0" style="height: 40px; width: 100%; border-radius: 8px; overflow: hidden; white-space: nowrap; background-color: rgba(220, 53, 69, 0.05);" @click="terminateSession">
-            <div class="d-flex justify-content-center align-items-center flex-shrink-0" style="width: 40px; height: 100%;">
-              <i class="bi bi-power fs-5"></i>
-            </div>
-            <span class="nav-text fw-bold ms-1 text-start">Terminate Session</span>
+      <header class="app-header p-3 d-flex align-items-center px-4">
+        <div class="header-brand-area me-4">
+          <button class="hamburger-btn me-3" @click="toggleSidebar" title="Toggle Sidebar">
+            <i class="bi bi-list"></i>
           </button>
+          <img src="https://d2nnykqiaju69u.cloudfront.net/pslife_photos/Maricel_temp/logos/megaworld%20lifestyel%20malls.png" alt="Company Logo" style="height: 35px;">
         </div>
 
-      </div>
-    </aside>
-
-    <main class="content-area">
-      
-      <header class="app-header p-3 d-flex align-items-center justify-content-between px-4">
-        
-        <div class="input-group bg-white" style="max-width: 500px; border-radius: 8px; overflow: hidden; border: 1px solid #cbd5e1; box-shadow: inset 0 1px 2px rgba(0,0,0,0.03);">
+        <div class="input-group bg-light flex-grow-1" style="max-width: 650px; border-radius: 8px; overflow: hidden; border: 1px solid #cbd5e1;">
           <span class="input-group-text bg-transparent border-0"><i class="bi bi-search text-muted"></i></span>
           <input type="text" class="form-control bg-transparent border-0 shadow-none" placeholder="Search by RFP No, Payee, Property..." v-model="searchInput">
-          <span class="input-group-text bg-transparent border-0" v-if="searchInput" @click="clearSearch" style="cursor: pointer; transition: color 0.2s;">
-            <i class="bi bi-x-lg text-secondary hover-danger"></i>
+          <span class="input-group-text bg-transparent border-0" v-if="searchInput" @click="clearSearch" style="cursor: pointer;">
+            <i class="bi bi-x-lg text-secondary"></i>
           </span>
         </div>
         
-        <div>
-          <button class="btn btn-white border bg-white shadow-sm text-primary" @click="fetchServerData" title="Refresh Inbox">
+        <div class="ms-auto d-flex align-items-center">
+          <button class="btn btn-white border bg-white shadow-sm text-primary rounded-circle" style="width: 40px; height: 40px;" @click="fetchServerData" title="Refresh Manually">
             <i class="bi bi-arrow-clockwise fw-bold"></i>
           </button>
         </div>
       </header>
 
-      <div class="inbox-container" v-if="!activeRequest">
-        <div v-for="req in filteredRequests" :key="req.id" 
-             class="message-row" :class="{ 'unread': !req.isRead, 'read': req.isRead }"
-             @click="viewRequestDetails(req)">
-          
-          <div style="width: 280px;" class="d-flex align-items-center me-3 ps-2">
-            <div class="inbox-avatar shadow-sm">
-              {{ generateInitials(req.requestorEmail) }}
-            </div>
-            <div class="text-truncate">
-              {{ req.requestorEmail }}
-            </div>
-          </div>
-          
-          <div class="flex-grow-1 text-truncate">
-            <span class="badge bg-light text-dark border me-2">{{ req.rfpNo }}</span>
-            <span :class="{'fw-bold': !req.isRead}">{{ req.payee }}</span> 
-            <span class="text-muted small ms-1">- {{ req.serviceKind }} / {{ req.property }}</span>
-          </div>
-          
-          <div style="width: 120px;" class="text-end text-muted small pe-2">
-            {{ formatDisplayDate(req.timestamp) }}
-          </div>
-        </div>
+      <div class="app-body">
         
-        <div v-if="filteredRequests.length === 0" class="text-center py-5 mt-5">
-          <i class="bi bi-inbox text-muted opacity-25" style="font-size: 5rem;"></i>
-          <h4 class="mt-3 text-secondary">All caught up!</h4>
-          <p class="text-muted">No pending requests found matching your criteria.</p>
-        </div>
-      </div>
-
-      <div class="detail-container" v-else>
-        
-        <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
-          <button class="btn btn-back btn-sm rounded px-3 fw-bold shadow-sm" @click="returnToInbox">
-            <i class="bi bi-arrow-left me-1"></i> Back to Inbox
-          </button>
-          <img src="https://d2nnykqiaju69u.cloudfront.net/pslife_photos/Maricel_temp/logos/megaworld%20lifestyel%20malls.png" alt="Logo" style="height: 35px;">
-        </div>
-
-        <h3 class="mb-4 text-dark" style="font-weight: 400;">
-          {{ activeRequest.rfpNo }} - <span class="fw-bold">{{ activeRequest.payee }}</span>
-        </h3>
-
-        <div class="d-flex align-items-start mb-5">
-          <div class="bg-primary text-white rounded-circle d-flex justify-content-center align-items-center me-3 shadow-sm" style="width: 48px; height: 48px; font-size: 1.3rem; font-weight: bold;">
-            {{ generateInitials(activeRequest.requestorEmail) }}
-          </div>
-          
-          <div class="flex-grow-1">
-            <div class="d-flex justify-content-between align-items-center">
-              <span class="fw-bold fs-6 text-dark">{{ activeRequest.requestorEmail }}</span>
-              <span class="text-muted small">{{ formatDisplayDate(activeRequest.timestamp) }}</span>
-            </div>
-            <div class="text-muted small mt-1">
-              <div><strong class="text-secondary">To:</strong> {{ activeRequest.primaryRecipient }}</div>
-              <div v-if="activeRequest.secondaryRecipient"><strong class="text-secondary">Cc:</strong> {{ activeRequest.secondaryRecipient }}</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="row g-4 mb-4">
-          <div class="col-md-6">
-            <div class="info-card h-100 p-4">
-              <h6 class="text-primary border-bottom border-primary border-opacity-25 pb-2 mb-3 fw-bold"><i class="bi bi-building-gear me-2"></i>Location & Contract</h6>
-              <div class="row mb-2"><div class="col-5 text-muted small">Property</div><div class="col-7 small fw-bold text-dark">{{ activeRequest.property }}, {{ activeRequest.location }}</div></div>
-              <div class="row mb-2"><div class="col-5 text-muted small">Sector / Service</div><div class="col-7 small fw-bold text-dark">{{ activeRequest.sector }} <br> <span class="text-primary">{{ activeRequest.serviceKind }}</span></div></div>
-              <div class="row mb-2 mt-3 pt-2 border-top"><div class="col-5 text-muted small">Contract No.</div><div class="col-7 small fw-bold text-dark">{{ activeRequest.contractNo }}</div></div>
-              <div class="row"><div class="col-5 text-muted small">Contract Amt.</div><div class="col-7 small fw-bold text-primary">{{ activeRequest.contractAmount }}</div></div>
-            </div>
-          </div>
-
-          <div class="col-md-6">
-            <div class="info-card h-100 p-4">
-              <h6 class="text-success border-bottom border-success border-opacity-25 pb-2 mb-3 fw-bold"><i class="bi bi-receipt me-2"></i>Billing Summary</h6>
-              <div class="row mb-2"><div class="col-5 text-muted small">Payor Entity</div><div class="col-7 small fw-bold text-dark">{{ activeRequest.payorName }}</div></div>
-              <div class="row mb-2"><div class="col-5 text-muted small">Invoice No.</div><div class="col-7 small fw-bold text-dark">{{ activeRequest.invoiceNo }}</div></div>
-              <div class="row mb-2"><div class="col-5 text-muted small">Billing Period</div><div class="col-7 small fw-bold text-dark">{{ activeRequest.billingPeriod }} <br> <span class="text-muted">({{ activeRequest.month }} {{ activeRequest.year }})</span></div></div>
-              <div class="row mt-3 pt-2 border-top"><div class="col-5 text-muted small">Due Date</div><div class="col-7 small fw-bold text-danger">{{ formatDisplayDate(activeRequest.dueDate) }}</div></div>
-            </div>
-          </div>
-        </div>
-
-        <div class="d-flex flex-wrap justify-content-between align-items-center bg-white border rounded p-3 mb-5 shadow-sm">
-          <div>
-            <span class="text-muted small fw-bold me-2"><i class="bi bi-info-circle me-1"></i>General Status:</span>
-            <span class="badge bg-secondary text-uppercase py-2 px-3">{{ activeRequest.status }}</span>
-            <span class="ms-4 text-muted small fw-bold me-2"><i class="bi bi-cash-coin me-1"></i>SOA Amount:</span>
-            <span class="fw-bold text-dark fs-5">{{ activeRequest.soaAmount }}</span>
-          </div>
-          <div class="mt-2 mt-md-0">
-            <a v-if="verifyLinkFormat(activeRequest.fileLink)" :href="activeRequest.fileLink" target="_blank" class="btn btn-primary btn-sm fw-bold shadow-sm">
-              <i class="bi bi-file-earmark-pdf-fill me-1"></i> View Attached Document
-            </a>
-            <span v-else class="text-danger small fw-bold"><i class="bi bi-exclamation-triangle-fill me-1"></i> Invalid Document Link Provided</span>
-          </div>
-        </div>
-
-        <div v-if="activeRequest.history && activeRequest.history.length > 0" class="mb-5">
-          <h5 class="fw-bold text-dark mb-3"><i class="bi bi-check2-circle text-primary me-2"></i>Action Done</h5>
-          
-          <div v-for="(log, index) in activeRequest.history" :key="index" class="card border-0 shadow-sm mb-3" style="background-color: #f8fafc;">
-            <div class="card-body p-4">
-              <div class="d-flex align-items-start">
-                <div class="bg-secondary text-white rounded-circle d-flex justify-content-center align-items-center me-3 shadow-sm" style="width: 40px; height: 40px; font-weight: bold;">
-                  {{ generateInitials(log.actorEmail) }}
+        <aside :class="['sidebar-panel', { 'pinned': isSidebarPinned }]">
+          <ul class="nav flex-column mb-auto mt-2">
+            <li class="nav-item">
+              <a class="nav-link" :class="{'active': currentView === 'requests'}" @click="setView('requests')">
+                <div class="icon-container position-relative">
+                  <i class="bi bi-inbox-fill"></i>
+                  <span class="collapsed-badge badge rounded-pill bg-danger" v-if="dynamicUnreadCount > 0 && currentView === 'requests'">{{ dynamicUnreadCount }}</span>
                 </div>
-                <div class="flex-grow-1">
-                  <div class="d-flex justify-content-between align-items-center mb-1">
-                    <span class="fw-bold text-dark">{{ log.actorEmail }}</span>
-                    <span class="text-muted small">{{ formatDisplayDate(log.timestamp) }}</span>
-                  </div>
-                  <div class="mb-2">
-                    <span class="badge" :class="log.action.includes('Return') ? 'bg-danger' : 'bg-success'">{{ log.action }}</span>
-                  </div>
-                  <div class="text-muted small mb-2">
-                    <div><strong>To:</strong> {{ log.targetEmail }}</div>
-                    <div v-if="log.ccEmail"><strong>Cc:</strong> {{ log.ccEmail }}</div>
-                  </div>
-                  <div class="p-3 thread-quote rounded small text-dark mt-2 shadow-sm">
-                    "{{ log.remarks }}"
-                  </div>
-                </div>
+                <span class="nav-text fw-bold">Requests</span>
+                <span class="badge bg-danger rounded-pill ms-auto expanded-badge" v-if="dynamicUnreadCount > 0 && currentView === 'requests'">{{ dynamicUnreadCount }}</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" :class="{'active': currentView === 'starred'}" @click="setView('starred')">
+                <div class="icon-container"><i class="bi bi-star-fill"></i></div>
+                <span class="nav-text fw-bold">Starred</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" :class="{'active': currentView === 'archive'}" @click="setView('archive')">
+                <div class="icon-container"><i class="bi bi-archive-fill"></i></div>
+                <span class="nav-text fw-bold">Archived</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" :class="{'active': currentView === 'all'}" @click="setView('all')">
+                <div class="icon-container"><i class="bi bi-collection-fill"></i></div>
+                <span class="nav-text fw-bold">All Requests</span>
+              </a>
+            </li>
+          </ul>
+          
+          <div class="flex-spacer"></div>
+          
+          <div class="mt-4 pt-3 border-top" style="border-color: var(--sidebar-hover) !important; padding-bottom: 5px;">
+            <div class="d-flex align-items-center mb-3" style="padding: 0 22px;">
+              <div class="bg-primary text-white rounded-circle d-flex justify-content-center align-items-center flex-shrink-0 shadow-sm" style="width:40px; height:40px; font-weight:bold; font-size: 1.1rem;">
+                {{ generateInitials(activeUserEmail) }}
+              </div>
+              <div class="text-truncate small fw-bold ms-3 user-info" :title="activeUserEmail">
+                {{ activeUserEmail }}
               </div>
             </div>
-          </div>
-        </div>
-
-        <div class="card border border-primary border-opacity-25 shadow-sm" v-if="!isActionLocked">
-          <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
-            <h5 class="fw-bold text-dark"><i class="bi bi-shield-lock-fill text-primary me-2"></i>Action Required</h5>
-          </div>
-          
-          <div class="card-body">
             
-            <div class="mb-4">
-              <label class="form-label fw-bold text-secondary small">Justification / Remarks <span class="text-danger">*</span></label>
-              <textarea class="form-control bg-light" v-model="formInput.remarks" rows="2" placeholder="Provide necessary context..."></textarea>
+            <div style="padding: 0 22px;">
+              <button class="btn btn-outline-danger d-flex align-items-center p-0" style="height: 40px; width: 100%; border-radius: 8px; overflow: hidden; white-space: nowrap; background-color: rgba(220, 53, 69, 0.05);" @click="terminateSession">
+                <div class="d-flex justify-content-center align-items-center flex-shrink-0" style="width: 40px; height: 100%;">
+                  <i class="bi bi-power fs-5"></i>
+                </div>
+                <span class="nav-text fw-bold ms-1 text-start">Terminate Session</span>
+              </button>
+            </div>
+          </div>
+        </aside>
+
+        <main class="content-area">
+          
+          <div class="inbox-container" v-if="!activeRequest">
+            
+            <div class="px-4 py-2 border-bottom d-flex justify-content-between align-items-center" style="min-height: 50px; background-color: #f8fafc;">
+              <div class="d-flex align-items-center">
+                <div class="form-check mb-0 me-3" title="Select All">
+                  <input class="form-check-input" type="checkbox" :checked="isAllSelected" @change="toggleSelectAll">
+                </div>
+                
+                <div v-if="selectedRequests.length > 0" class="d-flex gap-2">
+                  
+                  <button v-if="currentView !== 'archive'" class="btn btn-sm btn-outline-secondary d-flex align-items-center" @click="bulkArchive(true)" title="Archive Selected">
+                    <i class="bi bi-archive me-1"></i> Archive
+                  </button>
+                  <button v-if="currentView === 'archive' || currentView === 'all'" class="btn btn-sm btn-outline-secondary d-flex align-items-center" @click="bulkArchive(false)" title="Unarchive Selected">
+                    <i class="bi bi-arrow-up-circle me-1"></i> Unarchive
+                  </button>
+                  
+                  <button class="btn btn-sm btn-outline-secondary d-flex align-items-center" @click="bulkMarkReadUnread(false)" title="Mark as Unread">
+                    <i class="bi bi-envelope me-1"></i> Mark Unread
+                  </button>
+                  <button class="btn btn-sm btn-outline-secondary d-flex align-items-center" @click="bulkMarkReadUnread(true)" title="Mark as Read">
+                    <i class="bi bi-envelope-open me-1"></i> Mark Read
+                  </button>
+                  
+                  <span class="ms-2 text-muted small align-self-center fw-bold">{{ selectedRequests.length }} selected</span>
+                </div>
+                
+                <h6 v-else class="mb-0 fw-bold text-secondary text-uppercase ms-1" style="font-size: 0.9rem;">
+                  <i class="bi me-2" :class="currentView === 'archive' ? 'bi-archive-fill' : (currentView === 'all' ? 'bi-collection-fill' : (currentView === 'starred' ? 'bi-star-fill text-warning' : 'bi-inbox-fill'))"></i> 
+                  {{ currentView === 'requests' ? 'Requests Inbox' : currentView }} 
+                  <span v-if="searchInput" class="text-primary text-lowercase ms-2"> (filtered)</span>
+                </h6>
+              </div>
             </div>
 
-            <div class="p-3 border rounded bg-light mb-4">
-              <h6 class="small fw-bold text-muted mb-3"><i class="bi bi-send me-1"></i> ROUTING DETAILS</h6>
+            <div v-for="req in processedRequests" :key="req.id" 
+                 class="message-row" :class="{ 'unread': !req.isRead, 'read': req.isRead }"
+                 @click="viewRequestDetails(req)">
               
-              <div class="input-group mb-2 shadow-sm">
-                <span class="input-group-text bg-white border-end-0 small fw-bold text-muted" style="width: 50px;">To:</span>
-                <input type="email" class="form-control border-start-0 bg-white" placeholder="Comma separated (e.g. boss@mail.com, hr@mail.com)" v-model="formInput.forwardEmail">
+              <div class="form-check mb-0 me-3" @click.stop>
+                <input class="form-check-input" type="checkbox" :value="req.rfpNo" v-model="selectedRequests">
               </div>
 
-              <div class="input-group shadow-sm">
-                <span class="input-group-text bg-white border-end-0 small fw-bold text-muted" style="width: 50px;">Cc:</span>
-                <input type="email" class="form-control border-start-0 bg-white" placeholder="Carbon copy email (Optional)..." v-model="formInput.ccEmail">
+              <div class="star-btn me-3" @click.stop="toggleStar(req)">
+                <i class="bi" :class="req.isStarred ? 'bi-star-fill text-warning' : 'bi-star text-muted opacity-50'"></i>
               </div>
-            </div>
 
-            <div class="d-flex gap-3">
-              <button class="btn btn-success fw-bold flex-grow-1 py-2" @click="handleActionSubmission('Approve & Forward')">
-                <i class="bi bi-check2-all me-1"></i> FORWARD TO RECIPIENTS
-              </button>
-              <button class="btn btn-outline-danger fw-bold py-2" style="width: 150px;" @click="handleActionSubmission('Return to Sender')">
-                <i class="bi bi-arrow-return-left me-1"></i> RETURN
-              </button>
+              <div style="width: 250px;" class="d-flex align-items-center me-3 ps-1">
+                <div class="inbox-avatar shadow-sm">
+                  {{ generateInitials(req.requestorEmail) }}
+                </div>
+                <div class="text-truncate">
+                  {{ req.requestorEmail }}
+                </div>
+              </div>
+              
+              <div class="flex-grow-1 text-truncate">
+                <span class="badge bg-light text-dark border me-2">{{ req.rfpNo }}</span>
+                <span :class="{'fw-bold': !req.isRead}">{{ req.payee }}</span> 
+                <span class="text-muted small ms-1">- {{ req.serviceKind }} / {{ req.property }}</span>
+                <span v-if="req.isArchived" class="badge bg-secondary ms-2 small">Archived</span>
+              </div>
+              
+              <div class="row-actions" @click.stop>
+                <button class="action-icon-btn" @click="archiveSingleFromList(req, !req.isArchived)" :title="req.isArchived ? 'Unarchive' : 'Archive'">
+                  <i class="bi" :class="req.isArchived ? 'bi-arrow-up-circle' : 'bi-archive'"></i>
+                </button>
+                <button class="action-icon-btn" @click="markReadUnreadSingle(req, !req.isRead)" :title="req.isRead ? 'Mark as Unread' : 'Mark as Read'">
+                  <i class="bi" :class="req.isRead ? 'bi-envelope' : 'bi-envelope-open'"></i>
+                </button>
+              </div>
+
+              <div class="timestamp-text text-end text-muted small pe-2" style="width: 110px;">
+                 <i class="bi" :class="isToday(req.timestamp) ? 'bi-clock' : 'bi-calendar3'" style="margin-right: 4px;"></i> 
+                 {{ formatListDate(req.timestamp) }}
+              </div>
             </div>
             
+            <div v-if="processedRequests.length === 0" class="text-center py-5 mt-5">
+              <i class="bi bi-inbox text-muted opacity-25" style="font-size: 5rem;"></i>
+              <h4 class="mt-3 text-secondary">No Records Found</h4>
+              <p class="text-muted">There are no requests matching your current filter.</p>
+            </div>
           </div>
-        </div>
 
-      </div> 
-    </main>
+          <div class="detail-container" v-else>
+            
+            <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+              <div>
+                <button class="btn btn-back btn-sm rounded px-3 fw-bold shadow-sm" @click="returnToInbox">
+                  <i class="bi bi-arrow-left me-1"></i> Back
+                </button>
+                <button class="btn btn-back btn-sm rounded px-3 fw-bold shadow-sm ms-2" @click="archiveSingleFromList(activeRequest, !activeRequest.isArchived)">
+                  <i class="bi" :class="activeRequest.isArchived ? 'bi-arrow-up-circle' : 'bi-archive'"></i> 
+                  {{ activeRequest.isArchived ? 'Unarchive' : 'Archive' }}
+                </button>
+                <button class="btn btn-back btn-sm rounded px-3 fw-bold shadow-sm ms-2" @click="markReadUnreadSingle(activeRequest, false); returnToInbox();">
+                  <i class="bi bi-envelope me-1"></i> Mark Unread
+                </button>
+              </div>
+              
+              <div class="d-flex align-items-center">
+                <span v-if="activeRequest.isArchived" class="badge bg-secondary px-3 py-2 me-3">This request is Archived</span>
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/Megaworld_logo_and_wordmark.svg/1280px-Megaworld_logo_and_wordmark.svg.png" alt="Megaworld Logo" style="height: 22px;">
+              </div>
+            </div>
+
+            <div class="d-flex align-items-center mb-4">
+               <h3 class="mb-0 text-dark" style="font-weight: 400;">
+                {{ activeRequest.rfpNo }} - <span class="fw-bold">{{ activeRequest.payee }}</span>
+               </h3>
+               <div class="star-btn ms-3" @click="toggleStar(activeRequest)">
+                  <i class="bi fs-4" :class="activeRequest.isStarred ? 'bi-star-fill text-warning' : 'bi-star text-muted opacity-25'"></i>
+               </div>
+            </div>
+
+            <div class="d-flex align-items-start mb-5">
+              <div class="bg-primary text-white rounded-circle d-flex justify-content-center align-items-center me-3 shadow-sm" style="width: 48px; height: 48px; font-size: 1.3rem; font-weight: bold;">
+                {{ generateInitials(activeRequest.requestorEmail) }}
+              </div>
+              <div class="flex-grow-1">
+                <div class="d-flex justify-content-between align-items-center">
+                  <span class="fw-bold fs-6 text-dark">{{ activeRequest.requestorEmail }}</span>
+                  <span class="text-muted small">{{ formatDisplayDate(activeRequest.timestamp) }}</span>
+                </div>
+                <div class="text-muted small mt-1">
+                  <div><strong class="text-secondary">To:</strong> {{ activeRequest.primaryRecipient }}</div>
+                  <div v-if="activeRequest.secondaryRecipient"><strong class="text-secondary">Cc:</strong> {{ activeRequest.secondaryRecipient }}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="row g-4 mb-4">
+              <div class="col-md-6">
+                <div class="info-card h-100 p-4">
+                  <h6 class="text-primary border-bottom border-primary border-opacity-25 pb-2 mb-3 fw-bold"><i class="bi bi-building-gear me-2"></i>Location & Contract</h6>
+                  <div class="row mb-2"><div class="col-5 text-muted small">Property</div><div class="col-7 small fw-bold text-dark">{{ activeRequest.property }}, {{ activeRequest.location }}</div></div>
+                  <div class="row mb-2"><div class="col-5 text-muted small">Sector / Service</div><div class="col-7 small fw-bold text-dark">{{ activeRequest.sector }} <br> <span class="text-primary">{{ activeRequest.serviceKind }}</span></div></div>
+                  <div class="row mb-2 mt-3 pt-2 border-top"><div class="col-5 text-muted small">Contract No.</div><div class="col-7 small fw-bold text-dark">{{ activeRequest.contractNo }}</div></div>
+                  <div class="row"><div class="col-5 text-muted small">Contract Amt.</div><div class="col-7 small fw-bold text-primary">{{ activeRequest.contractAmount }}</div></div>
+                </div>
+              </div>
+
+              <div class="col-md-6">
+                <div class="info-card h-100 p-4">
+                  <h6 class="text-success border-bottom border-success border-opacity-25 pb-2 mb-3 fw-bold"><i class="bi bi-receipt me-2"></i>Billing Summary</h6>
+                  <div class="row mb-2"><div class="col-5 text-muted small">Payor Entity</div><div class="col-7 small fw-bold text-dark">{{ activeRequest.payorName }}</div></div>
+                  <div class="row mb-2"><div class="col-5 text-muted small">Invoice No.</div><div class="col-7 small fw-bold text-dark">{{ activeRequest.invoiceNo }}</div></div>
+                  <div class="row mb-2"><div class="col-5 text-muted small">Billing Period</div><div class="col-7 small fw-bold text-dark">{{ activeRequest.billingPeriod }} <br> <span class="text-muted">({{ activeRequest.month }} {{ activeRequest.year }})</span></div></div>
+                  <div class="row mt-3 pt-2 border-top"><div class="col-5 text-muted small">Due Date</div><div class="col-7 small fw-bold text-danger">{{ formatDisplayDate(activeRequest.dueDate) }}</div></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="d-flex flex-wrap justify-content-between align-items-center bg-white border rounded p-3 mb-5 shadow-sm">
+              <div>
+                <span class="text-muted small fw-bold me-2"><i class="bi bi-info-circle me-1"></i>General Status:</span>
+                <span class="badge bg-secondary text-uppercase py-2 px-3">{{ activeRequest.status }}</span>
+                <span class="ms-4 text-muted small fw-bold me-2"><i class="bi bi-cash-coin me-1"></i>SOA Amount:</span>
+                <span class="fw-bold text-dark fs-5">{{ activeRequest.soaAmount }}</span>
+              </div>
+              <div class="mt-2 mt-md-0">
+                <a v-if="verifyLinkFormat(activeRequest.fileLink)" :href="activeRequest.fileLink" target="_blank" class="btn btn-primary btn-sm fw-bold shadow-sm">
+                  <i class="bi bi-file-earmark-pdf-fill me-1"></i> View Attached Document
+                </a>
+                <span v-else class="text-danger small fw-bold"><i class="bi bi-exclamation-triangle-fill me-1"></i> Invalid Document Link Provided</span>
+              </div>
+            </div>
+
+            <div v-if="activeRequest.history && activeRequest.history.length > 0" class="mb-5">
+              <h5 class="fw-bold text-dark mb-3"><i class="bi bi-check2-circle text-primary me-2"></i>Action Done</h5>
+              <div v-for="(log, index) in activeRequest.history" :key="index" class="card border-0 shadow-sm mb-3" style="background-color: #f8fafc;">
+                <div class="card-body p-4">
+                  <div class="d-flex align-items-start">
+                    <div class="bg-secondary text-white rounded-circle d-flex justify-content-center align-items-center me-3 shadow-sm" style="width: 40px; height: 40px; font-weight: bold;">
+                      {{ generateInitials(log.actorEmail) }}
+                    </div>
+                    <div class="flex-grow-1">
+                      <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="fw-bold text-dark">{{ log.actorEmail }}</span>
+                        <span class="text-muted small">{{ formatDisplayDate(log.timestamp) }}</span>
+                      </div>
+                      <div class="mb-2">
+                        <span class="badge" :class="log.action.includes('Return') ? 'bg-danger' : 'bg-success'">{{ log.action }}</span>
+                      </div>
+                      <div class="text-muted small mb-2">
+                        <div><strong>To:</strong> {{ log.targetEmail }}</div>
+                        <div v-if="log.ccEmail"><strong>Cc:</strong> {{ log.ccEmail }}</div>
+                      </div>
+                      <div class="p-3 thread-quote rounded small text-dark mt-2 shadow-sm">"{{ log.remarks }}"</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card border border-primary border-opacity-25 shadow-sm" v-if="!isActionLocked && !activeRequest.isArchived">
+              <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
+                <h5 class="fw-bold text-dark"><i class="bi bi-shield-lock-fill text-primary me-2"></i>Action Required</h5>
+              </div>
+              <div class="card-body">
+                <div class="mb-4">
+                  <label class="form-label fw-bold text-secondary small">Justification / Remarks <span class="text-danger">*</span></label>
+                  <textarea class="form-control bg-light" v-model="formInput.remarks" rows="2" placeholder="Provide necessary context..."></textarea>
+                </div>
+                <div class="p-3 border rounded bg-light mb-4">
+                  <h6 class="small fw-bold text-muted mb-3"><i class="bi bi-send me-1"></i> ROUTING DETAILS</h6>
+                  <div class="input-group mb-2 shadow-sm">
+                    <span class="input-group-text bg-white border-end-0 small fw-bold text-muted" style="width: 50px;">To:</span>
+                    <input type="email" class="form-control border-start-0 bg-white" placeholder="Comma separated (e.g. boss@mail.com, hr@mail.com)" v-model="formInput.forwardEmail">
+                  </div>
+                  <div class="input-group shadow-sm">
+                    <span class="input-group-text bg-white border-end-0 small fw-bold text-muted" style="width: 50px;">Cc:</span>
+                    <input type="email" class="form-control border-start-0 bg-white" placeholder="Carbon copy email (Optional)..." v-model="formInput.ccEmail">
+                  </div>
+                </div>
+                <div class="d-flex gap-3">
+                  <button class="btn btn-success fw-bold flex-grow-1 py-2" @click="handleActionSubmission('Approve & Forward')">
+                    <i class="bi bi-check2-all me-1"></i> FORWARD TO RECIPIENTS
+                  </button>
+                  <button class="btn btn-outline-danger fw-bold py-2" style="width: 150px;" @click="handleActionSubmission('Return to Sender')">
+                    <i class="bi bi-arrow-return-left me-1"></i> RETURN
+                  </button>
+                </div>
+              </div>
+            </div>
+
+          </div> 
+        </main>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -414,7 +472,12 @@
   createApp({
     data() {
       return {
+        isAuthenticated: true, 
+        isSidebarPinned: false,
+        currentView: 'requests', 
+        
         requestList: [],
+        selectedRequests: [], 
         activeRequest: null,
         
         appLoading: true,
@@ -427,43 +490,165 @@
         activeUserEmail: 'current_admin@megaworld.com',
         
         formInput: {
-          remarks: '',
-          forwardEmail: '',
-          ccEmail: ''
+          remarks: '', forwardEmail: '', ccEmail: ''
         }
       }
     },
     computed: {
-      countUnread() {
-        return this.requestList.filter(item => !item.isRead).length;
+      processedRequests() {
+        let filtered = this.requestList;
+        
+        if (this.currentView === 'requests') {
+          filtered = filtered.filter(req => !req.isArchived);
+        } else if (this.currentView === 'archive') {
+          filtered = filtered.filter(req => req.isArchived);
+        } else if (this.currentView === 'starred') {
+          filtered = filtered.filter(req => req.isStarred && !req.isArchived);
+        }
+
+        if (this.searchInput) {
+          const query = this.searchInput.toLowerCase();
+          filtered = filtered.filter(item => 
+            (item.rfpNo && item.rfpNo.toLowerCase().includes(query)) || 
+            (item.payee && item.payee.toLowerCase().includes(query)) ||
+            (item.property && item.property.toLowerCase().includes(query))
+          );
+        }
+        return filtered;
       },
-      filteredRequests() {
-        if (!this.searchInput) return this.requestList;
-        const query = this.searchInput.toLowerCase();
-        return this.requestList.filter(item => 
-          (item.rfpNo && item.rfpNo.toLowerCase().includes(query)) || 
-          (item.payee && item.payee.toLowerCase().includes(query)) ||
-          (item.property && item.property.toLowerCase().includes(query))
-        );
+      dynamicUnreadCount() {
+        return this.processedRequests.filter(item => !item.isRead).length;
       },
       isActionLocked() {
         if (!this.activeRequest || !this.activeRequest.history || this.activeRequest.history.length === 0) return false;
         const lastAction = this.activeRequest.history[this.activeRequest.history.length - 1];
         return lastAction.actorEmail === this.activeUserEmail;
+      },
+      isAllSelected() {
+        return this.processedRequests.length > 0 && this.selectedRequests.length === this.processedRequests.length;
       }
     },
     methods: {
+      simulateLogin() {
+        this.isAuthenticated = true;
+        this.appLoading = true;
+        setTimeout(() => { this.fetchServerData(); }, 2000); 
+      },
+      toggleSidebar() {
+        this.isSidebarPinned = !this.isSidebarPinned;
+      },
+      setView(viewName) {
+        this.currentView = viewName;
+        this.activeRequest = null;
+        this.searchInput = '';
+        this.selectedRequests = []; 
+      },
+      toggleSelectAll(event) {
+        if (event.target.checked) {
+          this.selectedRequests = this.processedRequests.map(req => req.rfpNo);
+        } else {
+          this.selectedRequests = [];
+        }
+      },
+      toggleStar(req) {
+        req.isStarred = !req.isStarred;
+        let starredList = JSON.parse(localStorage.getItem('portalStarredList') || '[]');
+        if (req.isStarred) {
+           if(!starredList.includes(req.rfpNo)) starredList.push(req.rfpNo);
+        } else {
+           starredList = starredList.filter(id => id !== req.rfpNo);
+        }
+        localStorage.setItem('portalStarredList', JSON.stringify(starredList));
+      },
+      
+      // Dynamic Single Action Handlers with Silent parameter
+      archiveSingleFromList(req, toArchive) {
+        req.isArchived = toArchive;
+        let archiveList = JSON.parse(localStorage.getItem('portalArchiveList') || '[]');
+        if (req.isArchived) {
+           if(!archiveList.includes(req.rfpNo)) archiveList.push(req.rfpNo);
+        } else {
+           archiveList = archiveList.filter(id => id !== req.rfpNo);
+        }
+        localStorage.setItem('portalArchiveList', JSON.stringify(archiveList));
+        const status = req.isArchived ? 'Archived' : 'Unarchived';
+        Swal.fire({ toast: true, position: 'bottom-end', icon: 'success', title: `Request ${status}`, showConfirmButton: false, timer: 1500 });
+      },
+      markReadUnreadSingle(req, markAsRead, showToast = true) {
+        req.isRead = markAsRead;
+        let unreadList = JSON.parse(localStorage.getItem('portalUnreadList') || '[]');
+        if (!markAsRead) {
+          if(!unreadList.includes(req.rfpNo)) unreadList.push(req.rfpNo);
+        } else {
+          unreadList = unreadList.filter(id => id !== req.rfpNo);
+        }
+        localStorage.setItem('portalUnreadList', JSON.stringify(unreadList));
+        
+        if (showToast) {
+          Swal.fire({ toast: true, position: 'bottom-end', icon: 'info', title: markAsRead ? `Marked as read` : `Marked as unread`, showConfirmButton: false, timer: 1500 });
+        }
+      },
+
+      // Bulk Action Handlers
+      bulkArchive(toArchive) {
+        let count = 0;
+        let archiveList = JSON.parse(localStorage.getItem('portalArchiveList') || '[]');
+        this.requestList.forEach(req => {
+          if (this.selectedRequests.includes(req.rfpNo)) {
+            req.isArchived = toArchive;
+            count++;
+            if(toArchive) {
+               if(!archiveList.includes(req.rfpNo)) archiveList.push(req.rfpNo);
+            } else {
+               archiveList = archiveList.filter(id => id !== req.rfpNo);
+            }
+          }
+        });
+        localStorage.setItem('portalArchiveList', JSON.stringify(archiveList));
+        this.selectedRequests = [];
+        Swal.fire({ toast: true, position: 'bottom-end', icon: 'success', title: `${count} requests ${toArchive ? 'archived' : 'unarchived'}.`, showConfirmButton: false, timer: 2000 });
+      },
+      bulkMarkReadUnread(markAsRead) {
+        let count = 0;
+        let unreadList = JSON.parse(localStorage.getItem('portalUnreadList') || '[]');
+        this.requestList.forEach(req => {
+          if (this.selectedRequests.includes(req.rfpNo)) {
+            req.isRead = markAsRead;
+            count++;
+            if (!markAsRead) {
+              if(!unreadList.includes(req.rfpNo)) unreadList.push(req.rfpNo);
+            } else {
+              unreadList = unreadList.filter(id => id !== req.rfpNo);
+            }
+          }
+        });
+        localStorage.setItem('portalUnreadList', JSON.stringify(unreadList));
+        this.selectedRequests = [];
+        Swal.fire({ toast: true, position: 'bottom-end', icon: 'info', title: `${count} marked as ${markAsRead ? 'read' : 'unread'}.`, showConfirmButton: false, timer: 2000 });
+      },
+
       fetchServerData() {
         if (typeof google !== 'undefined') {
           google.script.run.withSuccessHandler(response => {
             let data = JSON.parse(response);
-            
+            const savedStars = JSON.parse(localStorage.getItem('portalStarredList') || '[]');
+            const savedArchives = JSON.parse(localStorage.getItem('portalArchiveList') || '[]'); 
+            const savedUnreads = JSON.parse(localStorage.getItem('portalUnreadList') || '[]');
+
             data.forEach(req => {
+              req.isArchived = savedArchives.includes(req.rfpNo); 
+              req.isStarred = savedStars.includes(req.rfpNo); 
+              
+              let hasReadHistory = false;
               if (req.history && req.history.length > 0) {
                 const lastLog = req.history[req.history.length - 1];
-                if (lastLog.actorEmail === this.activeUserEmail) {
-                  req.isRead = true; 
-                }
+                if (lastLog.actorEmail === this.activeUserEmail) { hasReadHistory = true; }
+              }
+              
+              if (savedUnreads.includes(req.rfpNo)) {
+                 req.isRead = false; 
+              } else if (hasReadHistory) {
+                 req.isRead = true;
               }
             });
 
@@ -471,164 +656,111 @@
             this.appLoading = false;
           }).getInboxData();
         } else {
-          setTimeout(() => { this.appLoading = false; }, 1200);
+          setTimeout(() => { this.appLoading = false; }, 2000);
         }
       },
-      clearSearch() {
-        this.searchInput = '';
-      },
+      clearSearch() { this.searchInput = ''; },
       viewRequestDetails(requestObject) {
-        requestObject.isRead = true; 
+        // Silently mark as read (no toast popup)
+        this.markReadUnreadSingle(requestObject, true, false);
         this.activeRequest = requestObject;
-        this.formInput.remarks = '';
-        this.formInput.forwardEmail = '';
-        this.formInput.ccEmail = '';
+        this.formInput.remarks = ''; this.formInput.forwardEmail = ''; this.formInput.ccEmail = '';
       },
-      returnToInbox() {
-        this.activeRequest = null;
-      },
+      returnToInbox() { this.activeRequest = null; this.selectedRequests = []; },
       verifyLinkFormat(urlText) {
-        const urlPattern = new RegExp('^(https?:\\/\\/)?'+
-          '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|'+
-          '((\\d{1,3}\\.){3}\\d{1,3}))'+
-          '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*'+
-          '(\\?[;&a-z\\d%_.~+=-]*)?'+
-          '(\\#[-a-z\\d_]*)?$','i');
+        const urlPattern = new RegExp('^(https?:\\/\\/)?'+'((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|'+'((\\d{1,3}\\.){3}\\d{1,3}))'+'(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*'+'(\\?[;&a-z\\d%_.~+=-]*)?'+'(\\#[-a-z\\d_]*)?$','i');
         return !!urlPattern.test(urlText);
+      },
+      isToday(rawDate) {
+        if (!rawDate) return false;
+        const d = new Date(rawDate);
+        const today = new Date();
+        return d.getDate() === today.getDate() && d.getMonth() === today.getMonth() && d.getFullYear() === today.getFullYear();
+      },
+      formatListDate(rawDate) {
+        if (!rawDate) return '';
+        const d = new Date(rawDate);
+        if (this.isToday(rawDate)) {
+           return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+        } else {
+           return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
       },
       formatDisplayDate(rawDate) {
         if (!rawDate) return '';
-        const dateObj = new Date(rawDate);
-        return dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute:'2-digit' });
+        return new Date(rawDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute:'2-digit' });
       },
       generateInitials(emailAddress) {
-        if (!emailAddress) return '?';
-        return emailAddress.charAt(0).toUpperCase();
+        return !emailAddress ? '?' : emailAddress.charAt(0).toUpperCase();
       },
       handleActionSubmission(actionCommand) {
         if (!this.formInput.remarks.trim()) {
-          Swal.fire({
-            icon: 'warning',
-            title: 'Remarks Required',
-            text: 'You must provide justification or remarks before executing this action.',
-            confirmButtonColor: '#408A71'
-          });
-          return;
+          Swal.fire({ icon: 'warning', title: 'Remarks Required', text: 'You must provide justification or remarks before executing this action.', confirmButtonColor: '#408A71' }); return;
         }
-
-        const targetDestination = actionCommand === 'Return to Sender' 
-          ? this.activeRequest.requestorEmail 
-          : this.formInput.forwardEmail;
-        
+        const targetDestination = actionCommand === 'Return to Sender' ? this.activeRequest.requestorEmail : this.formInput.forwardEmail;
         if (actionCommand === 'Approve & Forward' && !targetDestination) {
-          Swal.fire({
-            icon: 'error',
-            title: 'Missing Recipient',
-            text: 'Please specify the email address of the next level approver.',
-            confirmButtonColor: '#dc3545'
-          });
-          return;
+          Swal.fire({ icon: 'error', title: 'Missing Recipient', text: 'Please specify the email address of the next level approver.', confirmButtonColor: '#dc3545' }); return;
         }
-
         Swal.fire({
-          title: 'Confirm Authorization',
-          html: `You are about to execute: <strong>${actionCommand}</strong><br>Routing to: <strong>${targetDestination}</strong>`,
-          icon: 'question',
-          showCancelButton: true,
-          confirmButtonColor: actionCommand === 'Return to Sender' ? '#dc3545' : '#285A48',
-          cancelButtonText: 'Cancel',
-          confirmButtonText: 'Yes, Execute Action'
+          title: 'Confirm Authorization', html: `You are about to execute: <strong>${actionCommand}</strong><br>Routing to: <strong>${targetDestination}</strong>`,
+          icon: 'question', showCancelButton: true, confirmButtonColor: actionCommand === 'Return to Sender' ? '#dc3545' : '#285A48',
+          cancelButtonText: 'Cancel', confirmButtonText: 'Yes, Execute Action'
         }).then((result) => {
-          if (result.isConfirmed) {
-            this.transmitActionToBackend(actionCommand, targetDestination);
-          }
+          if (result.isConfirmed) { this.transmitActionToBackend(actionCommand, targetDestination); }
         });
       },
       transmitActionToBackend(actionCommand, targetDestination) {
         this.processingAction = true;
         this.loaderMessage = 'Executing request securely...';
 
-        const cleanEmails = (str) => {
-          if (!str) return '';
-          return str.split(',').map(e => e.trim()).filter(e => e !== '').join(', ');
-        };
+        const cleanEmails = (str) => { return !str ? '' : str.split(',').map(e => e.trim()).filter(e => e !== '').join(', '); };
 
         const payloadData = {
-          rfpNo: this.activeRequest.rfpNo,
-          actorEmail: this.activeUserEmail,
-          action: actionCommand,
-          remarks: this.formInput.remarks,
-          targetEmail: cleanEmails(targetDestination),
-          ccEmail: cleanEmails(this.formInput.ccEmail)
+          rfpNo: this.activeRequest.rfpNo, actorEmail: this.activeUserEmail, action: actionCommand,
+          remarks: this.formInput.remarks, targetEmail: cleanEmails(targetDestination), ccEmail: cleanEmails(this.formInput.ccEmail)
         };
 
         if (typeof google !== 'undefined') {
           google.script.run.withSuccessHandler(response => {
             const result = JSON.parse(response);
             this.processingAction = false;
-            
             if(result.success) {
               Swal.fire('Action Successful', `Request has been routed.`, 'success');
               if(!this.activeRequest.history) this.activeRequest.history = [];
-              this.activeRequest.history.push({
-                 timestamp: new Date().toISOString(),
-                 actorEmail: payloadData.actorEmail,
-                 action: payloadData.action,
-                 remarks: payloadData.remarks,
-                 targetEmail: payloadData.targetEmail,
-                 ccEmail: payloadData.ccEmail
-              });
-              
+              this.activeRequest.history.push({ timestamp: new Date().toISOString(), ...payloadData });
               this.returnToInbox();
-            } else {
-              Swal.fire('System Error', result.message, 'error');
-            }
+            } else { Swal.fire('System Error', result.message, 'error'); }
           }).processAction(payloadData);
         } else {
           setTimeout(() => {
             this.processingAction = false;
             Swal.fire('Action Executed', `Routed to ${payloadData.targetEmail}`, 'success');
-            
             if(!this.activeRequest.history) this.activeRequest.history = [];
-              this.activeRequest.history.push({
-                 timestamp: new Date().toISOString(),
-                 actorEmail: payloadData.actorEmail,
-                 action: payloadData.action,
-                 remarks: payloadData.remarks,
-                 targetEmail: payloadData.targetEmail,
-                 ccEmail: payloadData.ccEmail
-              });
-
+            this.activeRequest.history.push({ timestamp: new Date().toISOString(), ...payloadData });
             this.returnToInbox();
           }, 1500);
         }
       },
       terminateSession() {
         Swal.fire({
-          title: 'Terminate Session?',
-          text: "Are you sure you want to securely log out?",
-          icon: 'warning',
-          showCancelButton: true,
-          confirmButtonColor: '#dc3545',
-          cancelButtonColor: '#f1f5f9',
-          confirmButtonText: 'Yes, log out'
+          title: 'Terminate Session?', text: "Are you sure you want to securely log out?",
+          icon: 'warning', showCancelButton: true, confirmButtonColor: '#dc3545',
+          cancelButtonColor: '#f1f5f9', confirmButtonText: 'Yes, log out'
         }).then((result) => {
           if (result.isConfirmed) {
-             Swal.fire('Logged Out', 'Your session has been terminated.', 'success');
+             this.isAuthenticated = false; 
+             Swal.fire({toast: true, position: 'top-end', icon: 'success', title: 'Logged Out', showConfirmButton: false, timer: 1500});
           }
         });
       },
       initializeLivePolling() {
         this.refreshTimer = setInterval(() => {
-          if(!this.processingAction && !this.activeRequest) {
-             this.fetchServerData();
-          }
+          if(!this.processingAction && !this.activeRequest) { this.fetchServerData(); }
         }, 15000);
       }
     },
     mounted() {
-      this.fetchServerData();
-      this.initializeLivePolling();
+      if(this.isAuthenticated) { this.fetchServerData(); this.initializeLivePolling(); }
     },
     beforeUnmount() {
       clearInterval(this.refreshTimer);
