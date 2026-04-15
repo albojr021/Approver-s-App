@@ -81,7 +81,7 @@
     
     .content-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; background-color: var(--app-bg); }
     
-    .inbox-container { flex: 1; overflow-y: auto; background: #ffffff; border-radius: 12px; margin: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+    .inbox-container { flex: 1; overflow-y: auto; background: #ffffff; border-radius: 12px; margin: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; scroll-behavior: smooth; }
     
     .message-row { padding: 8px 20px; border-bottom: 1px solid #f1f3f4; cursor: pointer; display: flex; align-items: center; transition: all 0.2s ease; border-left: 4px solid transparent; min-height: 52px; }
     .message-row:hover { background-color: #f8f9fa; box-shadow: inset 1px 0 0 #dadce0, inset -1px 0 0 #dadce0, 0 1px 2px 0 rgba(60,64,67,.3); transform: translateY(-1px); z-index: 1; position: relative; border-radius: 4px; }
@@ -94,6 +94,11 @@
     .message-row:hover .timestamp-text { display: none; } 
     .action-icon-btn { color: #5f6368; background: none; border: none; border-radius: 50%; width: 32px; height: 32px; display: flex; justify-content: center; align-items: center; transition: background 0.2s; }
     .action-icon-btn:hover { background-color: #e2e8f0; color: var(--accent-color); }
+    
+    .pagination-controls { display: flex; align-items: center; gap: 10px; }
+    .page-btn { background: none; border: none; color: #5f6368; width: 32px; height: 32px; border-radius: 50%; transition: background 0.2s; display: flex; align-items: center; justify-content: center; }
+    .page-btn:hover:not(:disabled) { background-color: #e2e8f0; }
+    .page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
     .star-btn { font-size: 1.3rem; cursor: pointer; transition: transform 0.2s ease; padding: 0 5px; }
     .star-btn:hover { transform: scale(1.2); }
@@ -102,7 +107,9 @@
     .unread .inbox-avatar { background-color: var(--accent-color); color: #ffffff; }
     .read .inbox-avatar { background-color: #e2e8f0; color: #64748b; }
 
-    .detail-container { flex: 1; overflow-y: auto; background: #ffffff; margin: 20px; padding: 30px 40px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+    .detail-container { position: relative; flex: 1; overflow-y: auto; background: #ffffff; margin: 20px; padding: 0 40px 30px 40px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; scroll-behavior: smooth; }
+    .sticky-toolbar { position: sticky; top: 0; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(5px); z-index: 50; padding: 20px 0 15px 0; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
+    
     .info-card { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; transition: transform 0.2s; }
     .info-card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); }
     
@@ -181,10 +188,10 @@
               <a class="nav-link" :class="{'active': currentView === 'requests'}" @click="setView('requests')">
                 <div class="icon-container position-relative">
                   <i class="bi bi-inbox-fill"></i>
-                  <span class="collapsed-badge badge rounded-pill bg-danger" v-if="dynamicUnreadCount > 0 && currentView === 'requests'">{{ dynamicUnreadCount }}</span>
+                  <span class="collapsed-badge badge rounded-pill bg-danger" v-if="sidebarUnreadCount > 0">{{ sidebarUnreadCount }}</span>
                 </div>
                 <span class="nav-text fw-bold">Requests</span>
-                <span class="badge bg-danger rounded-pill ms-auto expanded-badge" v-if="dynamicUnreadCount > 0 && currentView === 'requests'">{{ dynamicUnreadCount }}</span>
+                <span class="badge bg-danger rounded-pill ms-auto expanded-badge" v-if="sidebarUnreadCount > 0">{{ sidebarUnreadCount }}</span>
               </a>
             </li>
             <li class="nav-item">
@@ -232,30 +239,28 @@
 
         <main class="content-area">
           
-          <div class="inbox-container" v-if="!activeRequest">
+          <div id="inboxListScroll" class="inbox-container" v-if="!activeRequest">
             
-            <div class="px-4 py-2 border-bottom d-flex justify-content-between align-items-center" style="min-height: 50px; background-color: #f8fafc;">
+            <div class="px-4 py-2 border-bottom d-flex justify-content-between align-items-center sticky-top bg-light" style="min-height: 50px; z-index: 10;">
+              
               <div class="d-flex align-items-center">
                 <div class="form-check mb-0 me-3" title="Select All">
                   <input class="form-check-input" type="checkbox" :checked="isAllSelected" @change="toggleSelectAll">
                 </div>
                 
                 <div v-if="selectedRequests.length > 0" class="d-flex gap-2">
-                  
-                  <button v-if="currentView !== 'archive'" class="btn btn-sm btn-outline-secondary d-flex align-items-center" @click="bulkArchive(true)" title="Archive Selected">
+                  <button v-if="currentView !== 'archive'" class="btn btn-sm btn-outline-secondary d-flex align-items-center bg-white" @click="bulkArchive(true)" title="Archive Selected">
                     <i class="bi bi-archive me-1"></i> Archive
                   </button>
-                  <button v-if="currentView === 'archive' || currentView === 'all'" class="btn btn-sm btn-outline-secondary d-flex align-items-center" @click="bulkArchive(false)" title="Unarchive Selected">
+                  <button v-if="currentView === 'archive' || currentView === 'all'" class="btn btn-sm btn-outline-secondary d-flex align-items-center bg-white" @click="bulkArchive(false)" title="Unarchive Selected">
                     <i class="bi bi-arrow-up-circle me-1"></i> Unarchive
                   </button>
-                  
-                  <button class="btn btn-sm btn-outline-secondary d-flex align-items-center" @click="bulkMarkReadUnread(false)" title="Mark as Unread">
+                  <button class="btn btn-sm btn-outline-secondary d-flex align-items-center bg-white" @click="bulkMarkReadUnread(false)" title="Mark as Unread">
                     <i class="bi bi-envelope me-1"></i> Mark Unread
                   </button>
-                  <button class="btn btn-sm btn-outline-secondary d-flex align-items-center" @click="bulkMarkReadUnread(true)" title="Mark as Read">
+                  <button class="btn btn-sm btn-outline-secondary d-flex align-items-center bg-white" @click="bulkMarkReadUnread(true)" title="Mark as Read">
                     <i class="bi bi-envelope-open me-1"></i> Mark Read
                   </button>
-                  
                   <span class="ms-2 text-muted small align-self-center fw-bold">{{ selectedRequests.length }} selected</span>
                 </div>
                 
@@ -265,9 +270,19 @@
                   <span v-if="searchInput" class="text-primary text-lowercase ms-2"> (filtered)</span>
                 </h6>
               </div>
+
+              <div class="pagination-controls" v-if="processedRequests.length > 0">
+                <span class="text-muted small fw-bold">{{ paginationText }}</span>
+                <button class="page-btn" :disabled="currentPage === 1" @click="prevPage" title="Newer">
+                  <i class="bi bi-chevron-left"></i>
+                </button>
+                <button class="page-btn" :disabled="currentPage === totalPages" @click="nextPage" title="Older">
+                  <i class="bi bi-chevron-right"></i>
+                </button>
+              </div>
             </div>
 
-            <div v-for="req in processedRequests" :key="req.id" 
+            <div v-for="req in paginatedRequests" :key="req.id" 
                  class="message-row" :class="{ 'unread': !req.isRead, 'read': req.isRead }"
                  @click="viewRequestDetails(req)">
               
@@ -317,9 +332,9 @@
             </div>
           </div>
 
-          <div class="detail-container" v-else>
+          <div id="detailViewScroll" class="detail-container" v-else>
             
-            <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+            <div class="sticky-toolbar">
               <div>
                 <button class="btn btn-back btn-sm rounded px-3 fw-bold shadow-sm" @click="returnToInbox">
                   <i class="bi bi-arrow-left me-1"></i> Back
@@ -428,34 +443,59 @@
               </div>
             </div>
 
-            <div class="card border border-primary border-opacity-25 shadow-sm" v-if="!isActionLocked && !activeRequest.isArchived">
-              <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
-                <h5 class="fw-bold text-dark"><i class="bi bi-shield-lock-fill text-primary me-2"></i>Action Required</h5>
-              </div>
-              <div class="card-body">
-                <div class="mb-4">
-                  <label class="form-label fw-bold text-secondary small">Justification / Remarks <span class="text-danger">*</span></label>
-                  <textarea class="form-control bg-light" v-model="formInput.remarks" rows="2" placeholder="Provide necessary context..."></textarea>
-                </div>
-                <div class="p-3 border rounded bg-light mb-4">
-                  <h6 class="small fw-bold text-muted mb-3"><i class="bi bi-send me-1"></i> ROUTING DETAILS</h6>
-                  <div class="input-group mb-2 shadow-sm">
-                    <span class="input-group-text bg-white border-end-0 small fw-bold text-muted" style="width: 50px;">To:</span>
-                    <input type="email" class="form-control border-start-0 bg-white" placeholder="Comma separated (e.g. boss@mail.com, hr@mail.com)" v-model="formInput.forwardEmail">
-                  </div>
-                  <div class="input-group shadow-sm">
-                    <span class="input-group-text bg-white border-end-0 small fw-bold text-muted" style="width: 50px;">Cc:</span>
-                    <input type="email" class="form-control border-start-0 bg-white" placeholder="Carbon copy email (Optional)..." v-model="formInput.ccEmail">
-                  </div>
-                </div>
-                <div class="d-flex gap-3">
-                  <button class="btn btn-success fw-bold flex-grow-1 py-2" @click="handleActionSubmission('Approve & Forward')">
-                    <i class="bi bi-check2-all me-1"></i> FORWARD TO RECIPIENTS
+            <div class="card border border-primary border-opacity-25 shadow-sm mt-4 mb-4" v-if="!isActionLocked && !activeRequest.isArchived">
+              <div class="card-body p-4">
+                
+                <div v-if="!actionMode" class="d-flex gap-3">
+                  <button class="btn btn-outline-primary rounded-pill px-4 fw-bold shadow-sm" @click="actionMode = 'return'">
+                    <i class="bi bi-reply-fill me-2"></i> Reply (Return)
                   </button>
-                  <button class="btn btn-outline-danger fw-bold py-2" style="width: 150px;" @click="handleActionSubmission('Return to Sender')">
-                    <i class="bi bi-arrow-return-left me-1"></i> RETURN
+                  <button class="btn btn-outline-success rounded-pill px-4 fw-bold shadow-sm" @click="actionMode = 'forward'">
+                    <i class="bi bi-forward-fill me-2"></i> Forward (Approve)
                   </button>
                 </div>
+
+                <div v-else class="border rounded p-3 bg-light shadow-sm position-relative">
+                   
+                   <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                     <h6 class="mb-0 fw-bold" :class="actionMode === 'return' ? 'text-danger' : 'text-success'">
+                       <i class="bi" :class="actionMode === 'return' ? 'bi-reply-fill' : 'bi-forward-fill'"></i>
+                       {{ actionMode === 'return' ? 'Return to Sender' : 'Forward to Next Approver' }}
+                     </h6>
+                     <button class="btn-close" @click="actionMode = null" title="Cancel"></button>
+                   </div>
+
+                   <div class="d-flex align-items-start mb-3">
+                      <div class="bg-secondary text-white rounded-circle d-flex justify-content-center align-items-center me-3 flex-shrink-0" style="width: 40px; height: 40px; font-weight: bold;">
+                        {{ generateInitials(activeUserEmail) }}
+                      </div>
+                      
+                      <div class="flex-grow-1 bg-white border rounded overflow-hidden shadow-sm">
+                         <div class="input-group border-bottom">
+                           <span class="input-group-text bg-white border-0 small fw-bold text-muted" style="width: 55px;">To</span>
+                           <input v-if="actionMode === 'return'" type="email" class="form-control border-0 bg-white fw-bold" :value="activeRequest.requestorEmail" disabled>
+                           <input v-else type="email" class="form-control border-0 bg-white" placeholder="Comma separated (e.g. boss@mail.com, hr@mail.com)" v-model="formInput.forwardEmail">
+                         </div>
+
+                         <div class="input-group border-bottom">
+                           <span class="input-group-text bg-white border-0 small fw-bold text-muted" style="width: 55px;">Cc</span>
+                           <input type="email" class="form-control border-0 bg-white" placeholder="Carbon copy email (Optional)..." v-model="formInput.ccEmail">
+                         </div>
+
+                         <div>
+                           <textarea class="form-control border-0 p-3" v-model="formInput.remarks" rows="4" placeholder="Write your justification or remarks here... (Required)" style="resize: none;"></textarea>
+                         </div>
+                      </div>
+                   </div>
+
+                   <div class="d-flex justify-content-end">
+                     <button class="btn fw-bold px-4 rounded-pill shadow-sm" :class="actionMode === 'return' ? 'btn-danger' : 'btn-success'" @click="handleActionSubmission(actionMode)">
+                       <i class="bi bi-send-fill me-2"></i> Send {{ actionMode === 'return' ? 'Return' : 'Approval' }}
+                     </button>
+                   </div>
+
+                </div> 
+                
               </div>
             </div>
 
@@ -480,6 +520,11 @@
         selectedRequests: [], 
         activeRequest: null,
         
+        actionMode: null, 
+        
+        currentPage: 1,
+        itemsPerPage: 20,
+
         appLoading: true,
         processingAction: false,
         loaderMessage: 'Establishing Secure Connection...',
@@ -492,6 +537,11 @@
         formInput: {
           remarks: '', forwardEmail: '', ccEmail: ''
         }
+      }
+    },
+    watch: {
+      searchInput() {
+        this.currentPage = 1;
       }
     },
     computed: {
@@ -516,8 +566,34 @@
         }
         return filtered;
       },
-      dynamicUnreadCount() {
-        return this.processedRequests.filter(item => !item.isRead).length;
+      totalPages() {
+        return Math.ceil(this.processedRequests.length / this.itemsPerPage) || 1;
+      },
+      paginatedRequests() {
+        const start = (this.currentPage - 1) * this.itemsPerPage;
+        const end = start + this.itemsPerPage;
+        return this.processedRequests.slice(start, end);
+      },
+      paginationText() {
+        if (this.processedRequests.length === 0) return '0-0 of 0';
+        const start = (this.currentPage - 1) * this.itemsPerPage + 1;
+        const end = Math.min(this.currentPage * this.itemsPerPage, this.processedRequests.length);
+        return `${start}-${end} of ${this.processedRequests.length}`;
+      },
+      // DYNAMIC UNREAD COUNTER LOGIC
+      sidebarUnreadCount() {
+        let inboxReqs = this.requestList.filter(req => !req.isArchived);
+        
+        if (this.searchInput) {
+          const query = this.searchInput.toLowerCase();
+          inboxReqs = inboxReqs.filter(item => 
+            (item.rfpNo && item.rfpNo.toLowerCase().includes(query)) || 
+            (item.payee && item.payee.toLowerCase().includes(query)) ||
+            (item.property && item.property.toLowerCase().includes(query))
+          );
+        }
+        
+        return inboxReqs.filter(item => !item.isRead).length;
       },
       isActionLocked() {
         if (!this.activeRequest || !this.activeRequest.history || this.activeRequest.history.length === 0) return false;
@@ -525,7 +601,7 @@
         return lastAction.actorEmail === this.activeUserEmail;
       },
       isAllSelected() {
-        return this.processedRequests.length > 0 && this.selectedRequests.length === this.processedRequests.length;
+        return this.paginatedRequests.length > 0 && this.selectedRequests.length === this.paginatedRequests.length;
       }
     },
     methods: {
@@ -542,10 +618,27 @@
         this.activeRequest = null;
         this.searchInput = '';
         this.selectedRequests = []; 
+        this.currentPage = 1; 
+      },
+      nextPage() {
+        if (this.currentPage < this.totalPages) {
+          this.currentPage++;
+          this.scrollToTop('inboxListScroll');
+        }
+      },
+      prevPage() {
+        if (this.currentPage > 1) {
+          this.currentPage--;
+          this.scrollToTop('inboxListScroll');
+        }
+      },
+      scrollToTop(elementId) {
+        const el = document.getElementById(elementId);
+        if (el) el.scrollTop = 0;
       },
       toggleSelectAll(event) {
         if (event.target.checked) {
-          this.selectedRequests = this.processedRequests.map(req => req.rfpNo);
+          this.selectedRequests = this.paginatedRequests.map(req => req.rfpNo);
         } else {
           this.selectedRequests = [];
         }
@@ -561,7 +654,6 @@
         localStorage.setItem('portalStarredList', JSON.stringify(starredList));
       },
       
-      // Dynamic Single Action Handlers with Silent parameter
       archiveSingleFromList(req, toArchive) {
         req.isArchived = toArchive;
         let archiveList = JSON.parse(localStorage.getItem('portalArchiveList') || '[]');
@@ -589,7 +681,6 @@
         }
       },
 
-      // Bulk Action Handlers
       bulkArchive(toArchive) {
         let count = 0;
         let archiveList = JSON.parse(localStorage.getItem('portalArchiveList') || '[]');
@@ -661,12 +752,13 @@
       },
       clearSearch() { this.searchInput = ''; },
       viewRequestDetails(requestObject) {
-        // Silently mark as read (no toast popup)
         this.markReadUnreadSingle(requestObject, true, false);
         this.activeRequest = requestObject;
+        this.actionMode = null; 
         this.formInput.remarks = ''; this.formInput.forwardEmail = ''; this.formInput.ccEmail = '';
+        this.scrollToTop('detailViewScroll');
       },
-      returnToInbox() { this.activeRequest = null; this.selectedRequests = []; },
+      returnToInbox() { this.activeRequest = null; this.selectedRequests = []; this.actionMode = null; },
       verifyLinkFormat(urlText) {
         const urlPattern = new RegExp('^(https?:\\/\\/)?'+'((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|'+'((\\d{1,3}\\.){3}\\d{1,3}))'+'(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*'+'(\\?[;&a-z\\d%_.~+=-]*)?'+'(\\#[-a-z\\d_]*)?$','i');
         return !!urlPattern.test(urlText);
@@ -693,17 +785,28 @@
       generateInitials(emailAddress) {
         return !emailAddress ? '?' : emailAddress.charAt(0).toUpperCase();
       },
-      handleActionSubmission(actionCommand) {
+      handleActionSubmission(mode) {
         if (!this.formInput.remarks.trim()) {
           Swal.fire({ icon: 'warning', title: 'Remarks Required', text: 'You must provide justification or remarks before executing this action.', confirmButtonColor: '#408A71' }); return;
         }
-        const targetDestination = actionCommand === 'Return to Sender' ? this.activeRequest.requestorEmail : this.formInput.forwardEmail;
-        if (actionCommand === 'Approve & Forward' && !targetDestination) {
-          Swal.fire({ icon: 'error', title: 'Missing Recipient', text: 'Please specify the email address of the next level approver.', confirmButtonColor: '#dc3545' }); return;
+        
+        let targetDestination = '';
+        let actionCommand = '';
+
+        if (mode === 'return') {
+           targetDestination = this.activeRequest.requestorEmail;
+           actionCommand = 'Return to Sender';
+        } else {
+           targetDestination = this.formInput.forwardEmail;
+           actionCommand = 'Approve & Forward';
+           if (!targetDestination) {
+              Swal.fire({ icon: 'error', title: 'Missing Recipient', text: 'Please specify the email address of the next level approver.', confirmButtonColor: '#dc3545' }); return;
+           }
         }
+
         Swal.fire({
           title: 'Confirm Authorization', html: `You are about to execute: <strong>${actionCommand}</strong><br>Routing to: <strong>${targetDestination}</strong>`,
-          icon: 'question', showCancelButton: true, confirmButtonColor: actionCommand === 'Return to Sender' ? '#dc3545' : '#285A48',
+          icon: 'question', showCancelButton: true, confirmButtonColor: mode === 'return' ? '#dc3545' : '#285A48',
           cancelButtonText: 'Cancel', confirmButtonText: 'Yes, Execute Action'
         }).then((result) => {
           if (result.isConfirmed) { this.transmitActionToBackend(actionCommand, targetDestination); }
