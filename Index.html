@@ -34,6 +34,8 @@
     .btn-success { background-color: var(--sidebar-hover); border-color: var(--sidebar-hover); }
     .btn-success:hover { background-color: var(--sidebar-bg); border-color: var(--sidebar-bg); }
 
+    .text-warning { color: #d97706 !important; } 
+
     body { background-color: var(--app-bg); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
     
     .app-root { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
@@ -83,7 +85,7 @@
     
     .inbox-container { flex: 1; overflow-y: auto; background: #ffffff; border-radius: 12px; margin: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; scroll-behavior: smooth; }
     
-    .message-row { padding: 8px 20px; border-bottom: 1px solid #f1f3f4; cursor: pointer; display: flex; align-items: center; transition: all 0.2s ease; border-left: 4px solid transparent; min-height: 52px; }
+    .message-row { padding: 8px 20px; border-bottom: 1px solid #f1f3f4; cursor: pointer; display: flex; align-items: center; transition: all 0.2s ease; border-left: 4px solid transparent; min-height: 60px; }
     .message-row:hover { background-color: #f8f9fa; box-shadow: inset 1px 0 0 #dadce0, inset -1px 0 0 #dadce0, 0 1px 2px 0 rgba(60,64,67,.3); transform: translateY(-1px); z-index: 1; position: relative; border-radius: 4px; }
     
     .message-row.unread { font-weight: 700; background-color: #ffffff; color: #202124; border-left-color: var(--accent-color); }
@@ -91,7 +93,8 @@
     
     .row-actions { display: none; align-items: center; gap: 8px; margin-right: 10px; }
     .message-row:hover .row-actions { display: flex; }
-    .message-row:hover .timestamp-text { display: none; } 
+    .message-row:hover .timestamp-container { display: none !important; } 
+
     .action-icon-btn { color: #5f6368; background: none; border: none; border-radius: 50%; width: 32px; height: 32px; display: flex; justify-content: center; align-items: center; transition: background 0.2s; }
     .action-icon-btn:hover { background-color: #e2e8f0; color: var(--accent-color); }
     
@@ -167,7 +170,7 @@
 
         <div class="input-group bg-light flex-grow-1" style="max-width: 650px; border-radius: 8px; overflow: hidden; border: 1px solid #cbd5e1;">
           <span class="input-group-text bg-transparent border-0"><i class="bi bi-search text-muted"></i></span>
-          <input type="text" class="form-control bg-transparent border-0 shadow-none" placeholder="Search by RFP No, Payee, Property..." v-model="searchInput">
+          <input type="text" class="form-control bg-transparent border-0 shadow-none" placeholder="Search by RFP No, Payee, Property, Service..." v-model="searchInput">
           <span class="input-group-text bg-transparent border-0" v-if="searchInput" @click="clearSearch" style="cursor: pointer;">
             <i class="bi bi-x-lg text-secondary"></i>
           </span>
@@ -242,23 +245,22 @@
           <div id="inboxListScroll" class="inbox-container" v-if="!activeRequest">
             
             <div class="px-4 py-2 border-bottom d-flex justify-content-between align-items-center sticky-top bg-light" style="min-height: 50px; z-index: 10;">
-              
               <div class="d-flex align-items-center">
                 <div class="form-check mb-0 me-3" title="Select All">
                   <input class="form-check-input" type="checkbox" :checked="isAllSelected" @change="toggleSelectAll">
                 </div>
                 
                 <div v-if="selectedRequests.length > 0" class="d-flex gap-2">
-                  <button v-if="currentView !== 'archive'" class="btn btn-sm btn-outline-secondary d-flex align-items-center bg-white" @click="bulkArchive(true)" title="Archive Selected">
+                  <button v-if="currentView !== 'archive'" class="btn btn-sm btn-back d-flex align-items-center" @click="bulkArchive(true)" title="Archive Selected">
                     <i class="bi bi-archive me-1"></i> Archive
                   </button>
-                  <button v-if="currentView === 'archive' || currentView === 'all'" class="btn btn-sm btn-outline-secondary d-flex align-items-center bg-white" @click="bulkArchive(false)" title="Unarchive Selected">
+                  <button v-if="currentView === 'archive' || currentView === 'all'" class="btn btn-sm btn-back d-flex align-items-center" @click="bulkArchive(false)" title="Unarchive Selected">
                     <i class="bi bi-arrow-up-circle me-1"></i> Unarchive
                   </button>
-                  <button class="btn btn-sm btn-outline-secondary d-flex align-items-center bg-white" @click="bulkMarkReadUnread(false)" title="Mark as Unread">
+                  <button class="btn btn-sm btn-back d-flex align-items-center" @click="bulkMarkReadUnread(false)" title="Mark as Unread">
                     <i class="bi bi-envelope me-1"></i> Mark Unread
                   </button>
-                  <button class="btn btn-sm btn-outline-secondary d-flex align-items-center bg-white" @click="bulkMarkReadUnread(true)" title="Mark as Read">
+                  <button class="btn btn-sm btn-back d-flex align-items-center" @click="bulkMarkReadUnread(true)" title="Mark as Read">
                     <i class="bi bi-envelope-open me-1"></i> Mark Read
                   </button>
                   <span class="ms-2 text-muted small align-self-center fw-bold">{{ selectedRequests.length }} selected</span>
@@ -319,16 +321,22 @@
                 </button>
               </div>
 
-              <div class="timestamp-text text-end text-muted small pe-2" style="width: 110px;">
-                 <i class="bi" :class="isToday(req.timestamp) ? 'bi-clock' : 'bi-calendar3'" style="margin-right: 4px;"></i> 
-                 {{ formatListDate(req.timestamp) }}
+              <div class="timestamp-container d-flex flex-column justify-content-center align-items-end pe-2" style="min-width: 100px;">
+                 <div class="text-muted small">
+                   <i class="bi" :class="isToday(req.timestamp) ? 'bi-clock' : 'bi-calendar3'"></i> 
+                   {{ formatListDate(req.timestamp) }}
+                 </div>
+                 <div class="small fw-bold mt-1 d-flex align-items-center" :class="getRequestStatus(req) === 'done' ? 'text-success' : 'text-warning'" style="font-size: 0.7rem;">
+                   <i class="bi me-1" :class="getRequestStatus(req) === 'done' ? 'bi-check-circle-fill' : 'bi-hourglass-split'"></i>
+                   TAT: {{ getTurnaroundTime(req) }}
+                 </div>
               </div>
             </div>
             
             <div v-if="processedRequests.length === 0" class="text-center py-5 mt-5">
-              <i class="bi bi-inbox text-muted opacity-25" style="font-size: 5rem;"></i>
+              <i class="bi bi-search text-muted opacity-25" style="font-size: 5rem;"></i>
               <h4 class="mt-3 text-secondary">No Records Found</h4>
-              <p class="text-muted">There are no requests matching your current filter.</p>
+              <p class="text-muted">There are no requests matching your smart search.</p>
             </div>
           </div>
 
@@ -394,7 +402,9 @@
                 <div class="info-card h-100 p-4">
                   <h6 class="text-success border-bottom border-success border-opacity-25 pb-2 mb-3 fw-bold"><i class="bi bi-receipt me-2"></i>Billing Summary</h6>
                   <div class="row mb-2"><div class="col-5 text-muted small">Payor Entity</div><div class="col-7 small fw-bold text-dark">{{ activeRequest.payorName }}</div></div>
+                  <div class="row mb-2"><div class="col-5 text-muted small">Payee</div><div class="col-7 small fw-bold text-dark">{{ activeRequest.payee }}</div></div>
                   <div class="row mb-2"><div class="col-5 text-muted small">Invoice No.</div><div class="col-7 small fw-bold text-dark">{{ activeRequest.invoiceNo }}</div></div>
+                  <div class="row mb-2"><div class="col-5 text-muted small">SOA / Invoice Amount</div><div class="col-7 small fw-bold text-dark">{{ activeRequest.soaAmount }}</div></div>
                   <div class="row mb-2"><div class="col-5 text-muted small">Billing Period</div><div class="col-7 small fw-bold text-dark">{{ activeRequest.billingPeriod }} <br> <span class="text-muted">({{ activeRequest.month }} {{ activeRequest.year }})</span></div></div>
                   <div class="row mt-3 pt-2 border-top"><div class="col-5 text-muted small">Due Date</div><div class="col-7 small fw-bold text-danger">{{ formatDisplayDate(activeRequest.dueDate) }}</div></div>
                 </div>
@@ -405,8 +415,6 @@
               <div>
                 <span class="text-muted small fw-bold me-2"><i class="bi bi-info-circle me-1"></i>General Status:</span>
                 <span class="badge bg-secondary text-uppercase py-2 px-3">{{ activeRequest.status }}</span>
-                <span class="ms-4 text-muted small fw-bold me-2"><i class="bi bi-cash-coin me-1"></i>SOA Amount:</span>
-                <span class="fw-bold text-dark fs-5">{{ activeRequest.soaAmount }}</span>
               </div>
               <div class="mt-2 mt-md-0">
                 <a v-if="verifyLinkFormat(activeRequest.fileLink)" :href="activeRequest.fileLink" target="_blank" class="btn btn-primary btn-sm fw-bold shadow-sm">
@@ -447,10 +455,10 @@
               <div class="card-body p-4">
                 
                 <div v-if="!actionMode" class="d-flex gap-3">
-                  <button class="btn btn-outline-primary rounded-pill px-4 fw-bold shadow-sm" @click="actionMode = 'return'">
+                  <button class="btn btn-outline-primary rounded-pill px-4 fw-bold shadow-sm" @click="setActionMode('return')">
                     <i class="bi bi-reply-fill me-2"></i> Reply (Return)
                   </button>
-                  <button class="btn btn-outline-success rounded-pill px-4 fw-bold shadow-sm" @click="actionMode = 'forward'">
+                  <button class="btn btn-outline-success rounded-pill px-4 fw-bold shadow-sm" @click="setActionMode('forward')">
                     <i class="bi bi-forward-fill me-2"></i> Forward (Approve)
                   </button>
                 </div>
@@ -474,12 +482,12 @@
                          <div class="input-group border-bottom">
                            <span class="input-group-text bg-white border-0 small fw-bold text-muted" style="width: 55px;">To</span>
                            <input v-if="actionMode === 'return'" type="email" class="form-control border-0 bg-white fw-bold" :value="activeRequest.requestorEmail" disabled>
-                           <input v-else type="email" class="form-control border-0 bg-white" placeholder="Comma separated (e.g. boss@mail.com, hr@mail.com)" v-model="formInput.forwardEmail">
+                           <input v-else type="email" class="form-control border-0 bg-white" placeholder="Single recipient email address..." v-model="formInput.forwardEmail">
                          </div>
 
                          <div class="input-group border-bottom">
                            <span class="input-group-text bg-white border-0 small fw-bold text-muted" style="width: 55px;">Cc</span>
-                           <input type="email" class="form-control border-0 bg-white" placeholder="Carbon copy email (Optional)..." v-model="formInput.ccEmail">
+                           <input type="email" class="form-control border-0 bg-white" placeholder="Carbon copy email (Optional, separated by comma)..." v-model="formInput.ccEmail">
                          </div>
 
                          <div>
@@ -557,12 +565,21 @@
         }
 
         if (this.searchInput) {
-          const query = this.searchInput.toLowerCase();
-          filtered = filtered.filter(item => 
-            (item.rfpNo && item.rfpNo.toLowerCase().includes(query)) || 
-            (item.payee && item.payee.toLowerCase().includes(query)) ||
-            (item.property && item.property.toLowerCase().includes(query))
-          );
+          const keywords = this.searchInput.toLowerCase().split(/\s+/).filter(k => k);
+          filtered = filtered.filter(item => {
+            const searchString = `
+              ${item.rfpNo || ''} 
+              ${item.payee || ''} 
+              ${item.property || ''} 
+              ${item.sector || ''} 
+              ${item.serviceKind || ''} 
+              ${item.payorName || ''} 
+              ${item.requestorEmail || ''} 
+              ${item.contractNo || ''} 
+              ${item.invoiceNo || ''}
+            `.toLowerCase();
+            return keywords.every(kw => searchString.includes(kw));
+          });
         }
         return filtered;
       },
@@ -580,17 +597,25 @@
         const end = Math.min(this.currentPage * this.itemsPerPage, this.processedRequests.length);
         return `${start}-${end} of ${this.processedRequests.length}`;
       },
-      // DYNAMIC UNREAD COUNTER LOGIC
       sidebarUnreadCount() {
         let inboxReqs = this.requestList.filter(req => !req.isArchived);
         
         if (this.searchInput) {
-          const query = this.searchInput.toLowerCase();
-          inboxReqs = inboxReqs.filter(item => 
-            (item.rfpNo && item.rfpNo.toLowerCase().includes(query)) || 
-            (item.payee && item.payee.toLowerCase().includes(query)) ||
-            (item.property && item.property.toLowerCase().includes(query))
-          );
+          const keywords = this.searchInput.toLowerCase().split(/\s+/).filter(k => k);
+          inboxReqs = inboxReqs.filter(item => {
+            const searchString = `
+              ${item.rfpNo || ''} 
+              ${item.payee || ''} 
+              ${item.property || ''} 
+              ${item.sector || ''} 
+              ${item.serviceKind || ''} 
+              ${item.payorName || ''} 
+              ${item.requestorEmail || ''} 
+              ${item.contractNo || ''} 
+              ${item.invoiceNo || ''}
+            `.toLowerCase();
+            return keywords.every(kw => searchString.includes(kw));
+          });
         }
         
         return inboxReqs.filter(item => !item.isRead).length;
@@ -619,6 +644,13 @@
         this.searchInput = '';
         this.selectedRequests = []; 
         this.currentPage = 1; 
+      },
+      setActionMode(mode) {
+        this.actionMode = mode;
+        this.formInput.ccEmail = this.activeRequest.secondaryRecipient || '';
+        if (mode === 'forward') {
+           this.formInput.forwardEmail = '';
+        }
       },
       nextPage() {
         if (this.currentPage < this.totalPages) {
@@ -718,6 +750,34 @@
         Swal.fire({ toast: true, position: 'bottom-end', icon: 'info', title: `${count} marked as ${markAsRead ? 'read' : 'unread'}.`, showConfirmButton: false, timer: 2000 });
       },
 
+      getRequestStatus(req) {
+         if (!req.history || req.history.length === 0) return 'pending';
+         const lastLog = req.history[req.history.length - 1];
+         return lastLog.actorEmail === this.activeUserEmail ? 'done' : 'pending';
+      },
+      getTurnaroundTime(req) {
+         if (!req.timestamp) return 'N/A';
+         const start = new Date(req.timestamp).getTime();
+         const status = this.getRequestStatus(req);
+         let end = new Date().getTime();
+
+         if (status === 'done' && req.history && req.history.length > 0) {
+            const lastLog = req.history[req.history.length - 1];
+            end = new Date(lastLog.timestamp).getTime();
+         }
+
+         let diff = end - start;
+         if (diff < 0) diff = 0;
+
+         const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+         const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+         const m = Math.floor((diff / 1000 / 60) % 60);
+
+         if (d > 0) return `${d}d ${h}h`;
+         if (h > 0) return `${h}h ${m}m`;
+         return `${m}m`;
+      },
+
       fetchServerData() {
         if (typeof google !== 'undefined') {
           google.script.run.withSuccessHandler(response => {
@@ -802,6 +862,10 @@
            if (!targetDestination) {
               Swal.fire({ icon: 'error', title: 'Missing Recipient', text: 'Please specify the email address of the next level approver.', confirmButtonColor: '#dc3545' }); return;
            }
+        }
+
+        if (targetDestination.includes(',')) {
+          Swal.fire({ icon: 'error', title: 'Invalid Recipient', text: 'The "To" field accepts only one (1) email address.', confirmButtonColor: '#dc3545' }); return;
         }
 
         Swal.fire({
