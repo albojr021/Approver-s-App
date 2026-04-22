@@ -119,6 +119,9 @@
     .meter-weak { background-color: #f59e0b; width: 50%; }
     .meter-good { background-color: #3b82f6; width: 75%; }
     .meter-strong { background-color: #10b981; width: 100%; }
+    
+    /* APPROVED BANNER */
+    .approved-banner { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 12px 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2); display: flex; align-items: center; }
   </style>
 </head>
 <body>
@@ -305,6 +308,13 @@
           </li>
 
           <li class="nav-item">
+            <a class="nav-link" :class="{'active': currentView === 'approved'}" @click="setView('approved')">
+              <div class="icon-container"><i class="bi bi-award-fill"></i></div>
+              <span class="nav-text fw-bold">Approved</span>
+            </a>
+          </li>
+
+          <li class="nav-item">
             <a class="nav-link" :class="{'active': currentView === 'starred'}" @click="setView('starred')">
               <div class="icon-container"><i class="bi bi-star-fill"></i></div>
               <span class="nav-text fw-bold">Starred</span>
@@ -378,7 +388,7 @@
               </div>
               
               <h6 v-else class="mb-0 fw-bold text-secondary text-uppercase ms-1" style="font-size: 0.9rem;">
-                <i class="bi me-2" :class="currentView === 'archive' ? 'bi-archive-fill' : (currentView === 'all' ? 'bi-collection-fill' : (currentView === 'starred' ? 'bi-star-fill text-warning' : (currentView === 'sent' ? 'bi-send-fill text-primary' : 'bi-inbox-fill')))"></i> 
+                <i class="bi me-2" :class="currentView === 'archive' ? 'bi-archive-fill' : (currentView === 'all' ? 'bi-collection-fill' : (currentView === 'starred' ? 'bi-star-fill text-warning' : (currentView === 'sent' ? 'bi-send-fill text-primary' : (currentView === 'approved' ? 'bi-award-fill text-success' : 'bi-inbox-fill'))))"></i> 
                 {{ currentView === 'requests' ? 'Requests Inbox' : (currentView === 'sent' ? 'Sent Requests' : currentView) }} 
                 <span v-if="searchInput" class="text-primary text-lowercase ms-2"> (filtered)</span>
               </h6>
@@ -403,7 +413,12 @@
               <span class="badge bg-light text-dark border me-2">{{ req.rfpNo }}</span>
               <span :class="{'fw-bold': !req.isRead}">{{ req.payee }}</span> 
               <span class="text-muted small ms-1">- {{ req.serviceKind }} / {{ req.property }}</span>
+              
               <span v-if="req.isArchived" class="badge bg-secondary ms-2 small">Archived</span>
+              <span v-if="isFinalApproved(req)" class="badge bg-success ms-2 small"><i class="bi bi-award-fill me-1"></i>Approved</span>
+              
+              <span v-if="getUserRoleType(req) === 'action'" class="badge border border-danger text-danger ms-2" style="background-color: #fef2f2; font-size: 0.65rem;">For your action</span>
+              <span v-else-if="getUserRoleType(req) === 'info'" class="badge border border-info text-info ms-2" style="background-color: #f0fdfa; font-size: 0.65rem;">For your information</span>
             </div>
             
             <div class="row-actions" @click.stop>
@@ -413,8 +428,8 @@
 
             <div class="timestamp-container d-flex flex-column justify-content-center align-items-end pe-2" style="min-width: 100px;">
                <div class="text-muted small"><i class="bi" :class="isToday(req.timestamp) ? 'bi-clock' : 'bi-calendar3'"></i> {{ formatListDate(req.timestamp) }}</div>
-               <div class="small fw-bold mt-1 d-flex align-items-center" :class="getRequestStatus(req) === 'done' ? 'text-success' : 'text-warning'" style="font-size: 0.7rem;">
-                 <i class="bi me-1" :class="getRequestStatus(req) === 'done' ? 'bi-check-circle-fill' : 'bi-hourglass-split'"></i> TAT: {{ getTurnaroundTime(req) }}
+               <div class="small fw-bold mt-1 d-flex align-items-center" :class="getRequestStatus(req) === 'pending' ? 'text-warning' : 'text-success'" style="font-size: 0.7rem;">
+                 <i class="bi me-1" :class="getRequestStatus(req) === 'pending' ? 'bi-hourglass-split' : (getRequestStatus(req) === 'approved' ? 'bi-patch-check-fill' : 'bi-check-circle-fill')"></i> TAT: {{ getTurnaroundTime(req) }}
                </div>
             </div>
           </div>
@@ -439,6 +454,14 @@
               <span v-if="activeRequest.isArchived" class="badge bg-secondary px-3 py-2 me-3">This request is Archived</span>
               <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/Megaworld_logo_and_wordmark.svg/1280px-Megaworld_logo_and_wordmark.svg.png" alt="Megaworld Logo" style="height: 22px;">
             </div>
+          </div>
+
+          <div v-if="isFinalApproved(activeRequest)" class="approved-banner mb-4">
+             <i class="bi bi-award-fill fs-4 me-3"></i>
+             <div>
+               <h5 class="mb-0 fw-bold">Request Approved</h5>
+               <div class="small opacity-75">This request has received final approval and is now locked.</div>
+             </div>
           </div>
 
           <div class="d-flex align-items-center mb-4">
@@ -487,9 +510,12 @@
           </div>
 
           <div class="d-flex flex-wrap justify-content-between align-items-center bg-white border rounded p-3 mb-5 shadow-sm">
-            <div>
+            <div class="d-flex align-items-center">
               <span class="text-muted small fw-bold me-2"><i class="bi bi-info-circle me-1"></i>General Status:</span>
               <span class="badge bg-secondary text-uppercase py-2 px-3">{{ activeRequest.status }}</span>
+              
+              <span v-if="getUserRoleType(activeRequest) === 'action'" class="badge bg-danger ms-3 py-2 px-3"><i class="bi bi-exclamation-circle me-1"></i> For your action</span>
+              <span v-else-if="getUserRoleType(activeRequest) === 'info'" class="badge bg-info text-dark ms-3 py-2 px-3"><i class="bi bi-info-circle me-1"></i> For your information</span>
             </div>
             <div class="mt-2 mt-md-0">
               <a v-if="verifyLinkFormat(activeRequest.fileLink)" :href="activeRequest.fileLink" target="_blank" class="btn btn-primary btn-sm fw-bold shadow-sm"><i class="bi bi-file-earmark-pdf-fill me-1"></i> View Attached Document</a>
@@ -508,11 +534,13 @@
                       <span class="fw-bold text-dark">{{ log.actorEmail }}</span>
                       <span class="text-muted small">{{ formatDisplayDate(log.timestamp) }}</span>
                     </div>
-                    <div class="mb-2"><span class="badge" :class="log.action.includes('Return') ? 'bg-danger' : 'bg-success'">{{ log.action }}</span></div>
-                    <div class="text-muted small mb-2">
+                    <div class="mb-2"><span class="badge" :class="log.action.includes('Return') ? 'bg-danger' : (log.action.includes('Reply') || log.action.includes('Replied') ? 'bg-info text-dark' : (log.action.includes('Final') ? 'bg-primary' : 'bg-success'))">{{ log.action }}</span></div>
+                    
+                    <div class="text-muted small mb-2" v-if="log.action !== 'Final Approved'">
                       <div><strong>To:</strong> {{ log.targetEmail }}</div>
                       <div v-if="log.ccEmail"><strong>Cc:</strong> {{ log.ccEmail }}</div>
                     </div>
+                    
                     <div class="p-3 thread-quote rounded small text-dark mt-2 shadow-sm">"{{ log.remarks }}"</div>
                     
                     <div v-if="log.fileLink" class="mt-3">
@@ -524,24 +552,52 @@
             </div>
           </div>
 
-          <div class="card border border-primary border-opacity-25 shadow-sm mt-4 mb-4" v-if="canActionRequest">
+          <div class="card border border-primary border-opacity-25 shadow-sm mt-4 mb-4" v-if="canActionRequest(activeRequest)">
             <div class="card-body p-4">
               
               <div v-if="!actionMode" class="d-flex gap-3">
-                <button class="btn btn-outline-primary rounded-pill px-4 fw-bold shadow-sm" @click="setActionMode('return')">
-                  <i class="bi bi-reply-fill me-2"></i> {{ isRequestor ? 'Reply' : 'Reply (Return)' }}
+                <button v-if="isRequestor" class="btn btn-outline-primary rounded-pill px-4 fw-bold shadow-sm" @click="promptActionMode('reply_approver')">
+                  <i class="bi bi-reply-fill me-2"></i> Reply
                 </button>
                 
-                <button v-if="isApprover" class="btn btn-outline-success rounded-pill px-4 fw-bold shadow-sm" @click="setActionMode('forward')">
-                  <i class="bi bi-forward-fill me-2"></i> Forward (Approve)
-                </button>
+                <template v-if="isApprover && !isDesignatedFinalApprover(activeRequest)">
+                  <button class="btn btn-outline-danger rounded-pill px-4 fw-bold shadow-sm" @click="promptActionMode('return_requestor')">
+                    <i class="bi bi-arrow-return-left me-2"></i> Return to Requestor
+                  </button>
+                  
+                  <button v-if="hasPreviousApprover()" class="btn btn-outline-primary rounded-pill px-4 fw-bold shadow-sm" @click="promptActionMode('reply_previous')">
+                    <i class="bi bi-reply-fill me-2"></i> Reply to Previous
+                  </button>
+
+                  <button class="btn btn-outline-success rounded-pill px-4 fw-bold shadow-sm" @click="promptActionMode('forward_next')">
+                    <i class="bi bi-forward-fill me-2"></i> Approve & Forward
+                  </button>
+
+                  <button class="btn btn-outline-warning text-dark rounded-pill px-4 fw-bold shadow-sm" @click="promptActionMode('forward_final')">
+                    <i class="bi bi-award-fill me-2"></i> Route to Final Approver
+                  </button>
+                </template>
+
+                <template v-if="isApprover && isDesignatedFinalApprover(activeRequest)">
+                  <button class="btn btn-outline-danger rounded-pill px-4 fw-bold shadow-sm" @click="promptActionMode('return_requestor')">
+                    <i class="bi bi-arrow-return-left me-2"></i> Return to Requestor
+                  </button>
+                  
+                  <button v-if="hasPreviousApprover()" class="btn btn-outline-primary rounded-pill px-4 fw-bold shadow-sm" @click="promptActionMode('reply_previous')">
+                    <i class="bi bi-reply-fill me-2"></i> Reply to Previous
+                  </button>
+
+                  <button class="btn btn-success rounded-pill px-4 fw-bold shadow-sm" @click="promptActionMode('final_approve')">
+                    <i class="bi bi-check-circle-fill me-2"></i> Final Approve
+                  </button>
+                </template>
               </div>
 
               <div v-else class="border rounded p-3 bg-light shadow-sm position-relative">
                  <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
-                   <h6 class="mb-0 fw-bold" :class="actionMode === 'return' ? 'text-danger' : 'text-success'">
-                     <i class="bi" :class="actionMode === 'return' ? 'bi-reply-fill' : 'bi-forward-fill'"></i> 
-                     {{ actionMode === 'return' ? (isRequestor ? 'Reply to Approver' : 'Return to Sender') : 'Forward to Next Approver' }}
+                   <h6 class="mb-0 fw-bold" :class="getComposerColor(actionMode)">
+                     <i class="bi" :class="getComposerIcon(actionMode)"></i> 
+                     {{ getComposerTitle(actionMode) }}
                    </h6>
                    <button class="btn-close" @click="actionMode = null" title="Cancel"></button>
                  </div>
@@ -550,16 +606,23 @@
                     <div class="bg-secondary text-white rounded-circle d-flex justify-content-center align-items-center me-3 flex-shrink-0" style="width: 40px; height: 40px; font-weight: bold;">{{ generateInitials(activeUser.email) }}</div>
                     
                     <div class="flex-grow-1 bg-white border rounded overflow-hidden shadow-sm">
-                       <div class="input-group border-bottom">
-                         <span class="input-group-text bg-white border-0 small fw-bold text-muted" style="width: 55px;">To</span>
-                         <input v-if="actionMode === 'return'" type="email" class="form-control border-0 bg-white fw-bold" :value="getReturnTarget()" disabled>
-                         <input v-else type="email" class="form-control border-0 bg-white" placeholder="Single recipient email address..." v-model="formInput.forwardEmail">
-                       </div>
-
-                       <div class="input-group border-bottom">
-                         <span class="input-group-text bg-white border-0 small fw-bold text-muted" style="width: 55px;">Cc</span>
-                         <input type="email" class="form-control border-0 bg-white" placeholder="Carbon copy email (Optional, separated by comma)..." v-model="formInput.ccEmail">
-                       </div>
+                       
+                       <template v-if="actionMode !== 'final_approve'">
+                         <div class="input-group border-bottom">
+                           <span class="input-group-text bg-white border-0 small fw-bold text-muted" style="width: 55px;">To</span>
+                           <input v-if="['return_requestor', 'reply_previous', 'reply_approver'].includes(actionMode)" type="email" class="form-control border-0 bg-white fw-bold" :value="getTargetForMode(actionMode)" disabled>
+                           <input v-else type="email" class="form-control border-0 bg-white" placeholder="Single recipient email address..." v-model="formInput.forwardEmail">
+                         </div>
+                         <div class="input-group border-bottom">
+                           <span class="input-group-text bg-white border-0 small fw-bold text-muted" style="width: 55px;">Cc</span>
+                           <input type="email" class="form-control border-0 bg-white" placeholder="Carbon copy email (Optional, separated by comma)..." v-model="formInput.ccEmail">
+                         </div>
+                       </template>
+                       <template v-else>
+                          <div class="p-2 px-3 bg-success bg-opacity-10 border-bottom">
+                            <span class="small fw-bold text-success"><i class="bi bi-info-circle me-1"></i> A final approval notification will automatically be sent to the Requestor.</span>
+                          </div>
+                       </template>
 
                        <div>
                          <textarea class="form-control border-0 p-3 pb-2" v-model="formInput.remarks" rows="3" placeholder="Write your justification or remarks here... (Required)" style="resize: none;"></textarea>
@@ -573,9 +636,9 @@
                  </div>
 
                  <div class="d-flex justify-content-end">
-                   <button class="btn fw-bold px-4 rounded-pill shadow-sm" :class="actionMode === 'return' ? 'btn-danger' : 'btn-success'" @click="handleActionSubmission(actionMode)" :disabled="isSendingAction">
+                   <button class="btn fw-bold px-4 rounded-pill shadow-sm" :class="getComposerBtnColor(actionMode)" @click="handleActionSubmission(actionMode)" :disabled="isSendingAction">
                      <span v-if="isSendingAction"><i class="spinner-border spinner-border-sm me-2"></i> Sending...</span>
-                     <span v-else><i class="bi bi-send-fill me-2"></i> Send {{ actionMode === 'return' ? 'Reply' : 'Approval' }}</span>
+                     <span v-else><i class="bi bi-send-fill me-2"></i> {{ getComposerBtnText(actionMode) }}</span>
                    </button>
                  </div>
               </div> 
@@ -623,7 +686,7 @@
         authForm: { email: '', password: '', regEmail: '', regName: '', regPassword: '', regConfirmPassword: '', otpCode: '', forgotEmail: '' },
         otpTargetEmail: '',
         otpIntent: '', 
-        formInput: { remarks: '', forwardEmail: '', ccEmail: '', fileObj: null } // Added fileObj
+        formInput: { remarks: '', forwardEmail: '', ccEmail: '', fileObj: null } 
       }
     },
     watch: {
@@ -686,6 +749,8 @@
           filtered = filtered.filter(req => req.isArchived);
         } else if (this.currentView === 'starred') {
           filtered = filtered.filter(req => req.isStarred && !req.isArchived);
+        } else if (this.currentView === 'approved') {
+          filtered = filtered.filter(req => this.isFinalApproved(req));
         }
 
         if (this.searchInput) {
@@ -745,17 +810,41 @@
         
         return inboxReqs.filter(item => !item.isRead).length;
       },
-      canActionRequest() {
-        if (!this.activeRequest || this.activeRequest.isArchived) return false;
-        const myEmail = this.activeUser.email.toLowerCase().trim();
-        const routing = this.getCurrentRouting(this.activeRequest);
-        return routing.to.includes(myEmail);
-      },
       isAllSelected() {
         return this.paginatedRequests.length > 0 && this.selectedRequests.length === this.paginatedRequests.length;
       }
     },
     methods: {
+      getStorageKey(baseKey) {
+        return baseKey + '_' + this.activeUser.email.toLowerCase().trim();
+      },
+
+      getUserRoleType(req) {
+         if (this.isFinalApproved(req)) return 'none'; 
+         const myEmail = this.activeUser.email.toLowerCase().trim();
+         const routing = this.getCurrentRouting(req);
+         if (routing.to.includes(myEmail)) return 'action';
+         if (routing.cc.includes(myEmail)) return 'info';
+         return 'none';
+      },
+
+      isFinalApproved(req) {
+         if (!req || !req.history || req.history.length === 0) return false;
+         return req.history.some(log => log.action === 'Final Approved');
+      },
+      isDesignatedFinalApprover(req) {
+         if (!req.history || req.history.length === 0) return false;
+         const lastLog = req.history[req.history.length - 1];
+         const myEmail = this.activeUser.email.toLowerCase().trim();
+         const targets = lastLog.targetEmail.toLowerCase().split(',').map(e => e.trim());
+         return lastLog.action === 'Forwarded to Final Approver' && targets.includes(myEmail);
+      },
+      canActionRequest(req) {
+        if (!req || req.isArchived || this.isFinalApproved(req)) return false;
+        const myEmail = this.activeUser.email.toLowerCase().trim();
+        const routing = this.getCurrentRouting(req);
+        return routing.to.includes(myEmail);
+      },
       getCurrentRouting(req) {
          let to = req.primaryRecipient || '';
          let cc = req.secondaryRecipient || '';
@@ -769,15 +858,79 @@
             cc: cc.toLowerCase().split(',').map(e => e.trim())
          };
       },
-      getReturnTarget() {
-         if (this.isRequestor) {
-             if (this.activeRequest.history && this.activeRequest.history.length > 0) {
-                 return this.activeRequest.history[this.activeRequest.history.length - 1].actorEmail;
-             }
-             return this.activeRequest.primaryRecipient; 
-         } else {
+      
+      hasPreviousApprover() {
+         if (!this.activeRequest.history || this.activeRequest.history.length === 0) return false;
+         const lastActor = this.activeRequest.history[this.activeRequest.history.length - 1].actorEmail;
+         return lastActor.toLowerCase() !== this.activeRequest.requestorEmail.toLowerCase();
+      },
+      
+      getTargetForMode(mode) {
+         if (mode === 'return_requestor' || mode === 'final_approve') {
              return this.activeRequest.requestorEmail;
          }
+         if (mode === 'reply_previous' || mode === 'reply_approver') {
+             return this.activeRequest.history[this.activeRequest.history.length - 1].actorEmail;
+         }
+         return ''; 
+      },
+
+      promptActionMode(mode) {
+         if (mode === 'forward_final') {
+            Swal.fire({
+              title: 'Route to Final Approver?',
+              text: "You are about to tag someone as the Final Approver. They will be the one to give the final sign-off for this request. Proceed?",
+              icon: 'warning', showCancelButton: true, confirmButtonColor: '#d97706', confirmButtonText: 'Yes, proceed'
+            }).then((result) => { if (result.isConfirmed) this.setActionMode(mode); });
+         } else {
+            this.setActionMode(mode);
+         }
+      },
+      setActionMode(mode) {
+        this.actionMode = mode;
+        this.formInput.ccEmail = this.activeRequest.secondaryRecipient || '';
+        this.formInput.fileObj = null; 
+        
+        if (mode === 'forward_next' || mode === 'forward_final') {
+            this.formInput.forwardEmail = '';
+        }
+      },
+      
+      getComposerTitle(mode) {
+        if(mode === 'return_requestor') return 'Return to Original Requestor';
+        if(mode === 'reply_previous') return 'Reply to Previous Approver';
+        if(mode === 'reply_approver') return 'Reply to Approver';
+        if(mode === 'forward_next') return 'Approve & Forward to Next Person';
+        if(mode === 'forward_final') return 'Route to Final Approver';
+        if(mode === 'final_approve') return 'Final Approval & Sign-Off';
+        return '';
+      },
+      getComposerColor(mode) {
+        if(mode === 'return_requestor') return 'text-danger';
+        if(mode === 'reply_previous' || mode === 'reply_approver') return 'text-primary';
+        if(mode === 'forward_final') return 'text-warning';
+        return 'text-success';
+      },
+      getComposerIcon(mode) {
+        if(mode === 'return_requestor') return 'bi-arrow-return-left';
+        if(mode === 'reply_previous' || mode === 'reply_approver') return 'bi-reply-fill';
+        if(mode === 'forward_final') return 'bi-award-fill';
+        if(mode === 'final_approve') return 'bi-check-circle-fill';
+        return 'bi-forward-fill';
+      },
+      getComposerBtnColor(mode) {
+        if(mode === 'return_requestor') return 'btn-danger';
+        if(mode === 'reply_previous' || mode === 'reply_approver') return 'btn-primary';
+        if(mode === 'forward_final') return 'btn-warning text-dark';
+        return 'btn-success';
+      },
+      getComposerBtnText(mode) {
+        if(mode === 'return_requestor') return 'Return';
+        if(mode === 'reply_previous' || mode === 'reply_approver') return 'Reply';
+        if(mode === 'forward_next') return 'Approve & Forward';
+        if(mode === 'forward_final') return 'Send to Final Approver';
+        if(mode === 'final_approve') return 'Submit Final Approval';
+        return 'Send';
       },
 
       switchAuthView(view) {
@@ -786,9 +939,7 @@
       requestOTP(intent) {
         const email = intent === 'register' ? this.authForm.regEmail : this.authForm.forgotEmail;
         if (!email) return Swal.fire('Email Required', 'Please enter your email address.', 'warning');
-        
         this.appLoading = true; this.loaderMessage = "Sending verification code...";
-        
         if (typeof google !== 'undefined') {
           google.script.run.withSuccessHandler(res => {
             this.appLoading = false; let result = JSON.parse(res);
@@ -800,7 +951,6 @@
       verifyOTP() {
         if(this.authForm.otpCode.length < 6) return Swal.fire('Invalid', 'Enter the 6 digit code.', 'warning');
         this.appLoading = true; this.loaderMessage = "Verifying code...";
-        
         if (typeof google !== 'undefined') {
           google.script.run.withSuccessHandler(res => {
             this.appLoading = false; let result = JSON.parse(res);
@@ -815,10 +965,8 @@
         if(!this.authForm.regName || !this.authForm.regPassword) return Swal.fire('Incomplete', 'Please fill all required fields.', 'warning');
         if(this.authForm.regPassword !== this.authForm.regConfirmPassword) return Swal.fire('Mismatch', 'Passwords do not match.', 'error');
         if(this.passwordScore < 2) return Swal.fire('Weak Password', 'Please create a stronger password.', 'warning');
-
         this.appLoading = true; this.loaderMessage = "Creating secure profile...";
         const payload = { fullName: this.authForm.regName, email: this.otpTargetEmail, password: this.authForm.regPassword };
-
         if (typeof google !== 'undefined') {
           google.script.run.withSuccessHandler(res => {
             this.appLoading = false; let result = JSON.parse(res);
@@ -830,7 +978,6 @@
       submitLogin() {
         if(!this.authForm.email || !this.authForm.password) return Swal.fire('Incomplete', 'Enter email and password.', 'warning');
         this.appLoading = true; this.loaderMessage = "Authenticating credentials...";
-        
         if (typeof google !== 'undefined') {
           google.script.run.withSuccessHandler(res => {
             let result = JSON.parse(res);
@@ -851,7 +998,6 @@
       submitPasswordReset() {
         if(this.authForm.regPassword !== this.authForm.regConfirmPassword) return Swal.fire('Mismatch', 'Passwords do not match.', 'error');
         this.appLoading = true; this.loaderMessage = "Updating security protocol...";
-        
         if (typeof google !== 'undefined') {
           google.script.run.withSuccessHandler(res => {
             this.appLoading = false; let result = JSON.parse(res);
@@ -929,12 +1075,7 @@
 
       toggleSidebar() { this.isSidebarPinned = !this.isSidebarPinned; },
       setView(viewName) { this.currentView = viewName; this.activeRequest = null; this.searchInput = ''; this.selectedRequests = []; this.currentPage = 1; },
-      setActionMode(mode) {
-        this.actionMode = mode;
-        this.formInput.ccEmail = this.activeRequest.secondaryRecipient || '';
-        this.formInput.fileObj = null; // Clear file input when switching modes
-        if (mode === 'forward') this.formInput.forwardEmail = '';
-      },
+      
       nextPage() {
         if (this.currentPage < this.totalPages) { this.currentPage++; this.scrollToTop('inboxListScroll'); }
       },
@@ -951,32 +1092,37 @@
       },
       toggleStar(req) {
         req.isStarred = !req.isStarred;
-        let starredList = JSON.parse(localStorage.getItem('portalStarredList') || '[]');
+        const storageKey = this.getStorageKey('portalStarredList');
+        let starredList = JSON.parse(localStorage.getItem(storageKey) || '[]');
         if (req.isStarred) { if(!starredList.includes(req.rfpNo)) starredList.push(req.rfpNo); }
         else { starredList = starredList.filter(id => id !== req.rfpNo); }
-        localStorage.setItem('portalStarredList', JSON.stringify(starredList));
+        localStorage.setItem(storageKey, JSON.stringify(starredList));
       },
       archiveSingleFromList(req, toArchive) {
         req.isArchived = toArchive;
-        let archiveList = JSON.parse(localStorage.getItem('portalArchiveList') || '[]');
+        const storageKey = this.getStorageKey('portalArchiveList');
+        let archiveList = JSON.parse(localStorage.getItem(storageKey) || '[]');
         if (req.isArchived) { if(!archiveList.includes(req.rfpNo)) archiveList.push(req.rfpNo); }
         else { archiveList = archiveList.filter(id => id !== req.rfpNo); }
-        localStorage.setItem('portalArchiveList', JSON.stringify(archiveList));
+        localStorage.setItem(storageKey, JSON.stringify(archiveList));
         Swal.fire({ toast: true, position: 'bottom-end', icon: 'success', title: `Request ${req.isArchived ? 'Archived':'Unarchived'}`, showConfirmButton: false, timer: 1500 });
       },
       markReadUnreadSingle(req, markAsRead, showToast = true) {
         req.isRead = markAsRead;
-        let readList = JSON.parse(localStorage.getItem('portalReadList') || '[]');
+        const storageKey = this.getStorageKey('portalReadList');
+        let readList = JSON.parse(localStorage.getItem(storageKey) || '[]');
         const stateKey = req.rfpNo + "_" + (req.history ? req.history.length : 0);
         
         if (markAsRead) { if(!readList.includes(stateKey)) readList.push(stateKey); }
         else { readList = readList.filter(k => k !== stateKey); }
-        localStorage.setItem('portalReadList', JSON.stringify(readList));
+        localStorage.setItem(storageKey, JSON.stringify(readList));
         
         if (showToast) Swal.fire({ toast: true, position: 'bottom-end', icon: 'info', title: markAsRead ? `Marked as read` : `Marked as unread`, showConfirmButton: false, timer: 1500 });
       },
       bulkArchive(toArchive) {
-        let count = 0; let archiveList = JSON.parse(localStorage.getItem('portalArchiveList') || '[]');
+        let count = 0; 
+        const storageKey = this.getStorageKey('portalArchiveList');
+        let archiveList = JSON.parse(localStorage.getItem(storageKey) || '[]');
         this.requestList.forEach(req => {
           if (this.selectedRequests.includes(req.rfpNo)) {
             req.isArchived = toArchive; count++;
@@ -984,12 +1130,14 @@
             else { archiveList = archiveList.filter(id => id !== req.rfpNo); }
           }
         });
-        localStorage.setItem('portalArchiveList', JSON.stringify(archiveList));
+        localStorage.setItem(storageKey, JSON.stringify(archiveList));
         this.selectedRequests = [];
         Swal.fire({ toast: true, position: 'bottom-end', icon: 'success', title: `${count} requests ${toArchive ? 'archived' : 'unarchived'}.`, showConfirmButton: false, timer: 2000 });
       },
       bulkMarkReadUnread(markAsRead) {
-        let count = 0; let readList = JSON.parse(localStorage.getItem('portalReadList') || '[]');
+        let count = 0; 
+        const storageKey = this.getStorageKey('portalReadList');
+        let readList = JSON.parse(localStorage.getItem(storageKey) || '[]');
         this.requestList.forEach(req => {
           if (this.selectedRequests.includes(req.rfpNo)) {
             req.isRead = markAsRead; count++;
@@ -998,36 +1146,81 @@
             else { readList = readList.filter(k => k !== stateKey); }
           }
         });
-        localStorage.setItem('portalReadList', JSON.stringify(readList));
+        localStorage.setItem(storageKey, JSON.stringify(readList));
         this.selectedRequests = [];
         Swal.fire({ toast: true, position: 'bottom-end', icon: 'info', title: `${count} marked as ${markAsRead ? 'read' : 'unread'}.`, showConfirmButton: false, timer: 2000 });
       },
 
+      // UPDATED TAT LOGIC
       getRequestStatus(req) {
-         if (!req.history || req.history.length === 0) return 'pending';
-         const lastLog = req.history[req.history.length - 1];
-         return lastLog.actorEmail.toLowerCase() === this.activeUser.email.toLowerCase() ? 'done' : 'pending';
+         if (this.isFinalApproved(req)) return 'approved'; 
+         if (this.canActionRequest(req)) return 'pending'; 
+         return 'done'; 
       },
       getTurnaroundTime(req) {
          if (!req.timestamp) return 'N/A';
-         const start = new Date(req.timestamp).getTime();
          const status = this.getRequestStatus(req);
-         let end = new Date().getTime();
-         if (status === 'done' && req.history && req.history.length > 0) end = new Date(req.history[req.history.length - 1].timestamp).getTime();
+         const myEmail = this.activeUser.email.toLowerCase().trim();
+
+         let start, end;
+
+         if (status === 'approved') {
+            start = new Date(req.timestamp).getTime();
+            const finalLog = req.history.find(log => log.action === 'Final Approved');
+            end = finalLog ? new Date(finalLog.timestamp).getTime() : new Date().getTime();
+         } 
+         else if (status === 'pending') {
+            start = (req.history && req.history.length > 0)
+                    ? new Date(req.history[req.history.length - 1].timestamp).getTime()
+                    : new Date(req.timestamp).getTime();
+            end = new Date().getTime();
+         } 
+         else { 
+            let myLogIndex = -1;
+            if (req.history) {
+               for (let i = req.history.length - 1; i >= 0; i--) {
+                   if (req.history[i].actorEmail.toLowerCase() === myEmail) {
+                       myLogIndex = i;
+                       break;
+                   }
+               }
+            }
+
+            if (myLogIndex > -1) {
+               end = new Date(req.history[myLogIndex].timestamp).getTime();
+               start = myLogIndex > 0 ? new Date(req.history[myLogIndex - 1].timestamp).getTime() : new Date(req.timestamp).getTime();
+            } else if (this.isRequestor && req.requestorEmail.toLowerCase() === myEmail) {
+               start = new Date(req.timestamp).getTime();
+               end = start;
+            } else {
+               start = (req.history && req.history.length > 0)
+                    ? new Date(req.history[req.history.length - 1].timestamp).getTime()
+                    : new Date(req.timestamp).getTime();
+               end = new Date().getTime();
+            }
+         }
+
          let diff = end - start;
          if (diff < 0) diff = 0;
-         const d = Math.floor(diff / (1000 * 60 * 60 * 24)), h = Math.floor((diff / (1000 * 60 * 60)) % 24), m = Math.floor((diff / 1000 / 60) % 60);
+         if (diff === 0 && status === 'done' && this.isRequestor) return "Submitted";
+
+         const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+         const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+         const m = Math.floor((diff / 1000 / 60) % 60);
+
          if (d > 0) return `${d}d ${h}h`;
          if (h > 0) return `${h}h ${m}m`;
-         return `${m}m`;
+         if (m > 0) return `${m}m`;
+         return `< 1m`;
       },
+
       fetchServerData() {
         if (typeof google !== 'undefined') {
           google.script.run.withSuccessHandler(response => {
             let data = JSON.parse(response);
-            const savedStars = JSON.parse(localStorage.getItem('portalStarredList') || '[]');
-            const savedArchives = JSON.parse(localStorage.getItem('portalArchiveList') || '[]'); 
-            const readList = JSON.parse(localStorage.getItem('portalReadList') || '[]');
+            const savedStars = JSON.parse(localStorage.getItem(this.getStorageKey('portalStarredList')) || '[]');
+            const savedArchives = JSON.parse(localStorage.getItem(this.getStorageKey('portalArchiveList')) || '[]'); 
+            const readList = JSON.parse(localStorage.getItem(this.getStorageKey('portalReadList')) || '[]');
 
             data.forEach(req => {
               req.isArchived = savedArchives.includes(req.rfpNo); 
@@ -1046,7 +1239,7 @@
                      req.isRead = true;
                      if (!readList.includes(stateKey)) {
                          readList.push(stateKey);
-                         localStorage.setItem('portalReadList', JSON.stringify(readList));
+                         localStorage.setItem(this.getStorageKey('portalReadList'), JSON.stringify(readList));
                      }
                  }
               } else if (this.isRequestor && req.requestorEmail.toLowerCase() === this.activeUser.email.toLowerCase()) {
@@ -1097,7 +1290,6 @@
       },
       generateInitials(str) { return !str ? '?' : str.charAt(0).toUpperCase(); },
       
-      // NEW: FILE UPLOAD HANDLER
       handleFileUpload(event) {
         const file = event.target.files[0];
         if (!file) {
@@ -1105,10 +1297,9 @@
             return;
         }
         
-        // 50MB Limit Validation
         if (file.size > 50 * 1024 * 1024) {
             Swal.fire('File Too Large', 'Please upload a file smaller than 50MB due to system limits.', 'warning');
-            event.target.value = ''; // Reset input
+            event.target.value = ''; 
             this.formInput.fileObj = null;
             return;
         }
@@ -1128,14 +1319,36 @@
       handleActionSubmission(mode) {
         if (!this.formInput.remarks.trim()) return Swal.fire({ icon: 'warning', title: 'Remarks Required', text: 'You must provide justification or remarks before executing this action.', confirmButtonColor: '#408A71' });
         
-        let targetDestination = mode === 'return' ? this.getReturnTarget() : this.formInput.forwardEmail;
-        let actionCommand = mode === 'return' ? (this.isRequestor ? 'Reply to Approver' : 'Return to Sender') : 'Approve & Forward';
+        let targetDestination = '';
+        let actionCommand = '';
+        const isOriginalReq = this.activeRequest.requestorEmail.toLowerCase() === this.activeUser.email.toLowerCase();
 
-        if (mode === 'forward' && !targetDestination) return Swal.fire({ icon: 'error', title: 'Missing Recipient', text: 'Please specify the email address of the next level approver.', confirmButtonColor: '#dc3545' });
+        if (mode === 'return_requestor') {
+           targetDestination = this.getTargetForMode(mode);
+           actionCommand = 'Returned to Requestor';
+        } else if (mode === 'reply_previous') {
+           targetDestination = this.getTargetForMode(mode);
+           actionCommand = 'Replied to Previous';
+        } else if (mode === 'reply_approver') {
+           targetDestination = this.getTargetForMode(mode);
+           actionCommand = 'Replied to Approver';
+        } else if (mode === 'forward_next') {
+           targetDestination = this.formInput.forwardEmail;
+           actionCommand = 'Approve & Forward';
+        } else if (mode === 'forward_final') {
+           targetDestination = this.formInput.forwardEmail;
+           actionCommand = 'Forwarded to Final Approver';
+        } else if (mode === 'final_approve') {
+           targetDestination = this.getTargetForMode(mode);
+           actionCommand = 'Final Approved';
+        }
+
+        if ((mode === 'forward_next' || mode === 'forward_final') && !targetDestination) return Swal.fire({ icon: 'error', title: 'Missing Recipient', text: 'Please specify the email address of the next approver.', confirmButtonColor: '#dc3545' });
         if (targetDestination.includes(',')) return Swal.fire({ icon: 'error', title: 'Invalid Recipient', text: 'The "To" field accepts only one (1) email address.', confirmButtonColor: '#dc3545' });
 
         this.transmitActionToBackend(actionCommand, targetDestination);
       },
+      
       transmitActionToBackend(actionCommand, targetDestination) {
         this.isSendingAction = true;
         const cleanEmails = (str) => !str ? '' : str.split(',').map(e => e.trim()).filter(e => e !== '').join(', ');
@@ -1147,23 +1360,21 @@
           remarks: this.formInput.remarks, 
           targetEmail: cleanEmails(targetDestination), 
           ccEmail: cleanEmails(this.formInput.ccEmail),
-          fileObj: this.formInput.fileObj // Append File to Payload
+          fileObj: this.formInput.fileObj 
         };
 
         const handleSuccess = (fileLinkUrl) => {
           this.isSendingAction = false;
           if(!this.activeRequest.history) this.activeRequest.history = [];
-          
-          // Inject real URL into local UI if provided
           if (fileLinkUrl) payloadData.fileLink = fileLinkUrl;
 
           this.activeRequest.history.push({ timestamp: new Date().toISOString(), ...payloadData });
           
           const stateKey = this.activeRequest.rfpNo + "_" + this.activeRequest.history.length;
-          let readList = JSON.parse(localStorage.getItem('portalReadList') || '[]');
+          let readList = JSON.parse(localStorage.getItem(this.getStorageKey('portalReadList')) || '[]');
           if(!readList.includes(stateKey)) {
               readList.push(stateKey);
-              localStorage.setItem('portalReadList', JSON.stringify(readList));
+              localStorage.setItem(this.getStorageKey('portalReadList'), JSON.stringify(readList));
           }
 
           this.actionMode = null;
