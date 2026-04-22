@@ -207,15 +207,31 @@ function getInboxData(userEmail) {
     const primaryTo = row[3] || ''; 
     const ccListStr = row[4] || ''; 
     const requestor = row[2] || ''; 
+    const currentRfpNo = row[5] || '';
 
-    const ccArray = ccListStr.split(',').map(e => e.trim().toLowerCase());
     const queryEmail = userEmail.trim().toLowerCase();
+    
+    // Original recipients validation
+    const toArray = primaryTo.toLowerCase().split(',').map(e => e.trim());
+    const ccArray = ccListStr.toLowerCase().split(',').map(e => e.trim());
 
-    if (primaryTo.toLowerCase() === queryEmail || ccArray.includes(queryEmail) || requestor.toLowerCase() === queryEmail) {
+    // Routing History validation
+    const requestHistory = actionLogs.filter(log => log.rfpNo === currentRfpNo);
+    let isInHistory = false;
+    
+    // Check if the current user was ever part of the routing (target, cc, or actor)
+    for (let i = 0; i < requestHistory.length; i++) {
+      let log = requestHistory[i];
+      if (log.actorEmail.toLowerCase() === queryEmail || 
+          log.targetEmail.toLowerCase().includes(queryEmail) || 
+          log.ccEmail.toLowerCase().includes(queryEmail)) {
+          isInHistory = true;
+          break;
+      }
+    }
+
+    if (toArray.includes(queryEmail) || ccArray.includes(queryEmail) || requestor.toLowerCase() === queryEmail || isInHistory) {
       
-      const currentRfpNo = row[5] || '';
-      const requestHistory = actionLogs.filter(log => log.rfpNo === currentRfpNo);
-
       submissions.push({
         id: index + 1,
         timestamp: row[1] || '',             
@@ -260,7 +276,6 @@ function processAction(payload) {
     }
 
     let fileUrl = '';
-    // Handle File Upload if it exists in payload
     if (payload.fileObj && payload.fileObj.fileData) {
       const folder = DriveApp.getFolderById(UPLOAD_FOLDER_ID);
       const decodedData = Utilities.base64Decode(payload.fileObj.fileData);
