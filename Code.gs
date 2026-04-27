@@ -183,11 +183,29 @@ function checkUserStatus(email) {
 function getInboxData(userEmail) {
   if(!userEmail) return JSON.stringify({ error: 'Unauthorized access.' });
 
-  const ss = SpreadsheetApp.openById(DB_MAIN_ID);
-  const sheet = ss.getSheetByName('SUBMISSIONS');
-  const logSheet = ss.getSheetByName('ACTION_LOGS');
+  const ssMain = SpreadsheetApp.openById(DB_MAIN_ID);
+  const ssUser = SpreadsheetApp.openById(DB_USER_ID);
+  
+  const sheet = ssMain.getSheetByName('SUBMISSIONS');
+  const logSheet = ssMain.getSheetByName('ACTION_LOGS');
+  const userStatesSheet = ssUser.getSheetByName('USER_TICKET_STATES');
   
   if (!sheet) return JSON.stringify({ error: 'SUBMISSIONS sheet not found.' });
+
+  // Load User Specific Ticket States
+  const userStates = {};
+  if (userStatesSheet) {
+      const usData = userStatesSheet.getDataRange().getValues();
+      for (let i = 1; i < usData.length; i++) {
+          if (usData[i][0].toString().toLowerCase() === userEmail.trim().toLowerCase()) {
+              userStates[usData[i][1]] = {
+                  isStarred: usData[i][2] === true || usData[i][2] === 'true',
+                  isArchived: usData[i][3] === true || usData[i][3] === 'true',
+                  readState: usData[i][4] || ''
+              };
+          }
+      }
+  }
 
   let actionLogs = [];
   if (logSheet) {
@@ -202,24 +220,20 @@ function getInboxData(userEmail) {
   data.shift(); 
   
   let submissions = [];
+  const queryEmail = userEmail.trim().toLowerCase();
   
   data.forEach((row, index) => {
     const primaryTo = row[3] || ''; 
     const ccListStr = row[4] || ''; 
     const requestor = row[2] || ''; 
     const currentRfpNo = row[5] || '';
-
-    const queryEmail = userEmail.trim().toLowerCase();
     
-    // Original recipients validation
     const toArray = primaryTo.toLowerCase().split(',').map(e => e.trim());
     const ccArray = ccListStr.toLowerCase().split(',').map(e => e.trim());
 
-    // Routing History validation
     const requestHistory = actionLogs.filter(log => log.rfpNo === currentRfpNo);
     let isInHistory = false;
     
-    // Check if the current user was ever part of the routing (target, cc, or actor)
     for (let i = 0; i < requestHistory.length; i++) {
       let log = requestHistory[i];
       if (log.actorEmail.toLowerCase() === queryEmail || 
@@ -232,6 +246,8 @@ function getInboxData(userEmail) {
 
     if (toArray.includes(queryEmail) || ccArray.includes(queryEmail) || requestor.toLowerCase() === queryEmail || isInHistory) {
       
+      const state = userStates[currentRfpNo] || { isStarred: false, isArchived: false, readState: '' };
+
       submissions.push({
         id: index + 1,
         timestamp: row[1] || '',             
@@ -255,13 +271,52 @@ function getInboxData(userEmail) {
         soaAmount: row[19] || '',            
         status: row[20] || 'Pending',        
         fileLink: row[21] || '',             
-        isRead: false,
+        isRead: false, // UI will resolve this
+        dbState: state, 
         history: requestHistory 
       });
     }
   });
 
   return JSON.stringify(submissions.reverse()); 
+}
+
+function syncUserTicketStates(email, updatesArray) {
+  try {
+    const ss = SpreadsheetApp.openById(DB_USER_ID);
+    let sheet = ss.getSheetByName('USER_TICKET_STATES');
+    if (!sheet) {
+      sheet = ss.insertSheet('USER_TICKET_STATES');
+      sheet.appendRow(['Email Address', 'RFP No.', 'Is Starred', 'Is Archived', 'Read State']);
+      sheet.getRange("A1:E1").setFontWeight("bold");
+    }
+    
+    // Find precise rows instead of full sheet replacement
+    const data = sheet.getDataRange().getValues();
+    let rowMap = {};
+    for (let i = 1; i < data.length; i++) {
+       let key = data[i][0].toString().toLowerCase() + "_" + data[i][1].toString();
+       rowMap[key] = i + 1; // 1-based row index
+    }
+
+    updatesArray.forEach(update => {
+       let key = email.toLowerCase() + "_" + update.rfpNo;
+       let rowNum = rowMap[key];
+       
+       if (rowNum) {
+          // Update existing row
+          sheet.getRange(rowNum, 3, 1, 3).setValues([[update.isStarred, update.isArchived, update.readState]]);
+       } else {
+          // Append new row
+          sheet.appendRow([email.toLowerCase(), update.rfpNo, update.isStarred, update.isArchived, update.readState || '']);
+          rowMap[key] = sheet.getLastRow(); // Update map
+       }
+    });
+
+    return JSON.stringify({ success: true });
+  } catch(e) {
+    return JSON.stringify({ success: false, message: e.toString() });
+  }
 }
 
 function processAction(payload) {
