@@ -4,7 +4,7 @@ const UPLOAD_FOLDER_ID = '1ctjUaEFZPe7YLGu1GlFB7BPwWPQeB0SK';
 
 function doGet() {
   return HtmlService.createHtmlOutputFromFile('Index')
-    .setTitle('MSP Contract Portal - Secure Workspace')
+    .setTitle('Portal Approvers Workspace')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
 }
