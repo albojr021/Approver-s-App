@@ -4,7 +4,7 @@ const UPLOAD_FOLDER_ID = '1ctjUaEFZPe7YLGu1GlFB7BPwWPQeB0SK';
 
 function doGet() {
   return HtmlService.createHtmlOutputFromFile('Index')
-    .setTitle('Portal Approvers Workspace')
+    .setTitle('MSP Contract Portal - Secure Workspace')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
 }
@@ -99,7 +99,7 @@ function registerUser(payload) {
 
     const rowData = [
       new Date(), payload.fullName, payload.email, hashedPassword, 
-      'APPROVER', isOrganic, 'Pending', '', ''
+      'APPROVER', isOrganic, 'Pending', '', '', payload.department || ''
     ];
     
     sheet.getRange(targetRow, 1, 1, rowData.length).setValues([rowData]);
@@ -189,6 +189,7 @@ function getInboxData(userEmail) {
   const sheet = ssMain.getSheetByName('SUBMISSIONS');
   const logSheet = ssMain.getSheetByName('ACTION_LOGS');
   const userStatesSheet = ssUser.getSheetByName('USER_TICKET_STATES');
+  const pepSheet = ssUser.getSheetByName('PEP');
   
   if (!sheet) return JSON.stringify({ error: 'SUBMISSIONS sheet not found.' });
 
@@ -207,12 +208,23 @@ function getInboxData(userEmail) {
       }
   }
 
+  // Load Department Mapping for initial Ball With
+  const userDict = {};
+  if (pepSheet) {
+      const pepData = pepSheet.getDataRange().getValues();
+      for (let i = 1; i < pepData.length; i++) {
+          if (pepData[i][2]) {
+              userDict[pepData[i][2].toString().trim().toLowerCase()] = pepData[i][9] || 'Unknown';
+          }
+      }
+  }
+
   let actionLogs = [];
   if (logSheet) {
     const logData = logSheet.getDataRange().getValues();
     logData.shift(); 
     actionLogs = logData.map(row => {
-      return { timestamp: row[0], rfpNo: row[1], actorEmail: row[2], action: row[3], remarks: row[4], targetEmail: row[5], ccEmail: row[6] || '', fileLink: row[7] || '' };
+      return { timestamp: row[0], rfpNo: row[1], actorEmail: row[2], action: row[3], remarks: row[4], targetEmail: row[5], ccEmail: row[6] || '', fileLink: row[7] || '', ballWith: row[8] || '' };
     });
   }
 
@@ -247,6 +259,8 @@ function getInboxData(userEmail) {
     if (toArray.includes(queryEmail) || ccArray.includes(queryEmail) || requestor.toLowerCase() === queryEmail || isInHistory) {
       
       const state = userStates[currentRfpNo] || { isStarred: false, isArchived: false, readState: '' };
+      const firstPrimaryTo = toArray.length > 0 ? toArray[0] : '';
+      const initialBallWith = userDict[firstPrimaryTo] || 'Unknown';
 
       submissions.push({
         id: index + 1,
@@ -271,8 +285,9 @@ function getInboxData(userEmail) {
         soaAmount: row[19] || '',            
         status: row[20] || 'Pending',        
         fileLink: row[21] || '',             
-        isRead: false, // UI will resolve this
+        isRead: false,
         dbState: state, 
+        initialBallWith: initialBallWith,
         history: requestHistory 
       });
     }
@@ -291,12 +306,11 @@ function syncUserTicketStates(email, updatesArray) {
       sheet.getRange("A1:E1").setFontWeight("bold");
     }
     
-    // Find precise rows instead of full sheet replacement
     const data = sheet.getDataRange().getValues();
     let rowMap = {};
     for (let i = 1; i < data.length; i++) {
        let key = data[i][0].toString().toLowerCase() + "_" + data[i][1].toString();
-       rowMap[key] = i + 1; // 1-based row index
+       rowMap[key] = i + 1; 
     }
 
     updatesArray.forEach(update => {
@@ -304,12 +318,10 @@ function syncUserTicketStates(email, updatesArray) {
        let rowNum = rowMap[key];
        
        if (rowNum) {
-          // Update existing row
           sheet.getRange(rowNum, 3, 1, 3).setValues([[update.isStarred, update.isArchived, update.readState]]);
        } else {
-          // Append new row
           sheet.appendRow([email.toLowerCase(), update.rfpNo, update.isStarred, update.isArchived, update.readState || '']);
-          rowMap[key] = sheet.getLastRow(); // Update map
+          rowMap[key] = sheet.getLastRow(); 
        }
     });
 
@@ -321,13 +333,30 @@ function syncUserTicketStates(email, updatesArray) {
 
 function processAction(payload) {
   try {
-    const ss = SpreadsheetApp.openById(DB_MAIN_ID);
-    let logSheet = ss.getSheetByName('ACTION_LOGS');
+    const ssMain = SpreadsheetApp.openById(DB_MAIN_ID);
+    let logSheet = ssMain.getSheetByName('ACTION_LOGS');
     
     if (!logSheet) {
-      logSheet = ss.insertSheet('ACTION_LOGS');
-      logSheet.appendRow(['Timestamp', 'RFP/PEF No.', 'Actor Email', 'Action Taken', 'Remarks/Comments', 'Target Email', 'Cc Email', 'File Upload']);
-      logSheet.getRange("A1:H1").setFontWeight("bold");
+      logSheet = ssMain.insertSheet('ACTION_LOGS');
+      logSheet.appendRow(['Timestamp', 'RFP/PEF No.', 'Actor Email', 'Action Taken', 'Remarks/Comments', 'Target Email', 'Cc Email', 'File Upload', 'Ball With']);
+      logSheet.getRange("A1:I1").setFontWeight("bold");
+    }
+
+    // Look up the target's department for Ball With tracking
+    let ballWithDept = 'Unknown';
+    if (payload.targetEmail) {
+        const firstTarget = payload.targetEmail.split(',')[0].trim().toLowerCase();
+        const ssUser = SpreadsheetApp.openById(DB_USER_ID);
+        const userSheet = ssUser.getSheetByName('PEP');
+        if (userSheet) {
+            const userData = userSheet.getDataRange().getValues();
+            for (let i = 1; i < userData.length; i++) {
+                if (userData[i][2] && userData[i][2].toString().toLowerCase() === firstTarget) {
+                    ballWithDept = userData[i][9] || 'Unknown'; // Fetch Col J
+                    break;
+                }
+            }
+        }
     }
 
     let fileUrl = '';
@@ -339,8 +368,10 @@ function processAction(payload) {
       fileUrl = file.getUrl();
     }
 
-    logSheet.appendRow([ new Date(), payload.rfpNo, payload.actorEmail, payload.action, payload.remarks, payload.targetEmail, payload.ccEmail, fileUrl ]);
-    return JSON.stringify({ success: true, fileLink: fileUrl });
+    logSheet.appendRow([ new Date(), payload.rfpNo, payload.actorEmail, payload.action, payload.remarks, payload.targetEmail, payload.ccEmail, fileUrl, ballWithDept ]);
+    
+    // Return ballWith so the UI can update optimistically
+    return JSON.stringify({ success: true, fileLink: fileUrl, ballWith: ballWithDept });
   } catch (error) {
     return JSON.stringify({ success: false, message: error.toString() });
   }
