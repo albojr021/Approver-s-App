@@ -1,5 +1,6 @@
 const DB_MAIN_ID = '1YAvZmCdWXbjOcJA-uUY40e6qVqzyiHcB06NpiPcz6y4';
 const DB_USER_ID = '1dBO8ThI7FEKb24D9sPVWokfXLuWUx5aCQvisrT9wBvI';
+const DB_STATES_ID = '1kCXHSBnGlK2ZYVqIA83fo6LCCYc4dOV1-KvGzy8kZP0';
 const UPLOAD_FOLDER_ID = '1ctjUaEFZPe7YLGu1GlFB7BPwWPQeB0SK';
 
 function doGet() {
@@ -185,15 +186,15 @@ function getInboxData(userEmail) {
 
   const ssMain = SpreadsheetApp.openById(DB_MAIN_ID);
   const ssUser = SpreadsheetApp.openById(DB_USER_ID);
+  const ssStates = SpreadsheetApp.openById(DB_STATES_ID);
   
   const sheet = ssMain.getSheetByName('SUBMISSIONS');
   const logSheet = ssMain.getSheetByName('ACTION_LOGS');
-  const userStatesSheet = ssUser.getSheetByName('USER_TICKET_STATES');
+  const userStatesSheet = ssStates.getSheetByName('USER_TICKET_STATES'); 
   const pepSheet = ssUser.getSheetByName('PEP');
   
   if (!sheet) return JSON.stringify({ error: 'SUBMISSIONS sheet not found.' });
 
-  // Load User Specific Ticket States
   const userStates = {};
   if (userStatesSheet) {
       const usData = userStatesSheet.getDataRange().getValues();
@@ -208,7 +209,6 @@ function getInboxData(userEmail) {
       }
   }
 
-  // Load Department Mapping for initial Ball With
   const userDict = {};
   if (pepSheet) {
       const pepData = pepSheet.getDataRange().getValues();
@@ -298,7 +298,7 @@ function getInboxData(userEmail) {
 
 function syncUserTicketStates(email, updatesArray) {
   try {
-    const ss = SpreadsheetApp.openById(DB_USER_ID);
+    const ss = SpreadsheetApp.openById(DB_STATES_ID);
     let sheet = ss.getSheetByName('USER_TICKET_STATES');
     if (!sheet) {
       sheet = ss.insertSheet('USER_TICKET_STATES');
@@ -370,7 +370,6 @@ function processAction(payload) {
 
     logSheet.appendRow([ new Date(), payload.rfpNo, payload.actorEmail, payload.action, payload.remarks, payload.targetEmail, payload.ccEmail, fileUrl, ballWithDept ]);
     
-    // Return ballWith so the UI can update optimistically
     return JSON.stringify({ success: true, fileLink: fileUrl, ballWith: ballWithDept });
   } catch (error) {
     return JSON.stringify({ success: false, message: error.toString() });
