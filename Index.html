@@ -61,10 +61,10 @@
     /* CONTENT */
     .content-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; background-color: var(--app-bg); }
     .inbox-container { flex: 1; overflow-y: auto; background: #ffffff; border-radius: 12px; margin: 20px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; scroll-behavior: smooth; }
-    .message-row { padding: 8px 20px; border-bottom: 1px solid #f1f3f4; cursor: pointer; display: flex; align-items: center; transition: all 0.2s ease; border-left: 4px solid transparent; min-height: 60px; }
+    .message-row { padding: 10px 20px; border-bottom: 1px solid #f1f3f4; cursor: pointer; display: flex; align-items: center; transition: all 0.2s ease; border-left: 4px solid transparent; min-height: 65px; }
     .message-row:hover { background-color: #f8f9fa; box-shadow: inset 1px 0 0 #dadce0, inset -1px 0 0 #dadce0, 0 1px 2px 0 rgba(60,64,67,.3); transform: translateY(-1px); z-index: 1; position: relative; border-radius: 4px; }
-    .message-row.unread { font-weight: 700; background-color: #ffffff; color: #202124; border-left-color: var(--accent-color); }
-    .message-row.read { color: #64748b; background-color: #f8fafc; font-weight: 400; }
+    .message-row.unread { background-color: #ffffff; border-left-color: var(--accent-color); }
+    .message-row.read { background-color: #f8fafc; }
     
     .row-actions { display: none; align-items: center; gap: 8px; margin-right: 10px; }
     .message-row:hover .row-actions { display: flex; }
@@ -295,15 +295,29 @@
                 <i class="bi bi-inbox-fill"></i>
                 <span class="collapsed-badge badge rounded-pill bg-danger" v-if="sidebarUnreadCount > 0">{{ sidebarUnreadCount }}</span>
               </div>
-              <span class="nav-text fw-bold">Requests</span>
+              <span class="nav-text fw-bold">Requests Inbox</span>
               <span class="badge bg-danger rounded-pill ms-auto expanded-badge" v-if="sidebarUnreadCount > 0">{{ sidebarUnreadCount }}</span>
+            </a>
+          </li>
+
+          <li class="nav-item">
+            <a class="nav-link" :class="{'active': currentView === 'fya'}" @click="setView('fya')">
+              <div class="icon-container"><i class="bi bi-exclamation-circle-fill text-danger"></i></div>
+              <span class="nav-text fw-bold">For Your Action</span>
+            </a>
+          </li>
+
+          <li class="nav-item">
+            <a class="nav-link" :class="{'active': currentView === 'fyi'}" @click="setView('fyi')">
+              <div class="icon-container"><i class="bi bi-info-circle-fill text-info"></i></div>
+              <span class="nav-text fw-bold">For Your Info</span>
             </a>
           </li>
           
           <li class="nav-item">
-            <a class="nav-link" :class="{'active': currentView === 'sent'}" @click="setView('sent')">
+            <a class="nav-link" :class="{'active': currentView === 'submitted'}" @click="setView('submitted')">
               <div class="icon-container"><i class="bi bi-send-fill"></i></div>
-              <span class="nav-text fw-bold">Sent</span>
+              <span class="nav-text fw-bold">Submitted Requests</span>
             </a>
           </li>
 
@@ -318,13 +332,6 @@
             <a class="nav-link" :class="{'active': currentView === 'archive'}" @click="setView('archive')">
               <div class="icon-container"><i class="bi bi-archive-fill"></i></div>
               <span class="nav-text fw-bold">Archived</span>
-            </a>
-          </li>
-
-          <li class="nav-item">
-            <a class="nav-link" :class="{'active': currentView === 'all'}" @click="setView('all')">
-              <div class="icon-container"><i class="bi bi-collection-fill"></i></div>
-              <span class="nav-text fw-bold">All Requests</span>
             </a>
           </li>
 
@@ -368,7 +375,7 @@
                 <button v-if="currentView !== 'archive'" class="btn btn-sm btn-back d-flex align-items-center" @click="bulkArchive(true)" title="Archive Selected">
                   <i class="bi bi-archive me-1"></i> Archive
                 </button>
-                <button v-if="currentView === 'archive' || currentView === 'all'" class="btn btn-sm btn-back d-flex align-items-center" @click="bulkArchive(false)" title="Unarchive Selected">
+                <button v-if="currentView === 'archive'" class="btn btn-sm btn-back d-flex align-items-center" @click="bulkArchive(false)" title="Unarchive Selected">
                   <i class="bi bi-arrow-up-circle me-1"></i> Unarchive
                 </button>
                 <button class="btn btn-sm btn-back d-flex align-items-center" @click="bulkMarkReadUnread(false)" title="Mark as Unread">
@@ -381,8 +388,8 @@
               </div>
               
               <h6 v-else class="mb-0 fw-bold text-secondary text-uppercase ms-1" style="font-size: 0.9rem;">
-                <i class="bi me-2" :class="currentView === 'archive' ? 'bi-archive-fill' : (currentView === 'all' ? 'bi-collection-fill' : (currentView === 'sent' ? 'bi-send-fill text-primary' : (currentView === 'approved' ? 'bi-award-fill text-success' : 'bi-inbox-fill')))"></i> 
-                {{ currentView === 'requests' ? 'Requests Inbox' : (currentView === 'sent' ? 'Sent Requests' : currentView) }} 
+                <i class="bi me-2" :class="currentView === 'archive' ? 'bi-archive-fill' : (currentView === 'submitted' ? 'bi-send-fill text-primary' : (currentView === 'approved' ? 'bi-award-fill text-success' : (currentView === 'fya' ? 'bi-exclamation-circle-fill text-danger' : (currentView === 'fyi' ? 'bi-info-circle-fill text-info' : 'bi-inbox-fill'))))"></i> 
+                {{ currentView === 'requests' ? 'Requests Inbox' : (currentView === 'submitted' ? 'Submitted Requests' : (currentView === 'fya' ? 'For Your Action' : (currentView === 'fyi' ? 'For Your Information' : currentView))) }} 
                 <span v-if="searchInput" class="text-primary text-lowercase ms-2"> (filtered)</span>
               </h6>
             </div>
@@ -397,21 +404,33 @@
           <div v-for="req in paginatedRequests" :key="req.id" class="message-row" :class="{ 'unread': !req.isRead, 'read': req.isRead }" @click="viewRequestDetails(req)">
             <div class="form-check mb-0 me-3" @click.stop><input class="form-check-input" type="checkbox" :value="req.rfpNo" v-model="selectedRequests"></div>
             <div class="star-btn me-3" @click.stop="toggleStar(req)"><i class="bi" :class="req.isStarred ? 'bi-star-fill text-warning' : 'bi-star text-muted opacity-50'"></i></div>
-            <div style="width: 250px;" class="d-flex align-items-center me-3 ps-1">
+            <div style="width: 200px;" class="d-flex align-items-center me-3 ps-1">
               <div class="inbox-avatar shadow-sm">{{ generateInitials(req.requestorEmail) }}</div>
-              <div class="text-truncate">{{ req.requestorEmail }}</div>
+              <div class="text-truncate fw-semibold" style="font-size: 0.95rem;">{{ req.requestorEmail }}</div>
             </div>
             
-            <div class="flex-grow-1 text-truncate">
-              <span class="badge bg-light text-dark border me-2">{{ req.rfpNo }}</span>
-              <span :class="{'fw-bold': !req.isRead}">{{ req.payee }}</span> 
-              <span class="text-muted small ms-1">- {{ req.serviceKind }} / {{ req.property }}</span>
-              
-              <span v-if="req.isArchived" class="badge bg-secondary ms-2 small">Archived</span>
-              <span v-if="isFinalApproved(req)" class="badge bg-success ms-2 small"><i class="bi bi-award-fill me-1"></i>Approved</span>
-              
-              <span v-if="getUserRoleType(req) === 'action'" class="badge border border-danger text-danger ms-2" style="background-color: #fef2f2; font-size: 0.65rem;">For your action</span>
-              <span v-else-if="getUserRoleType(req) === 'info'" class="badge border border-info text-info ms-2" style="background-color: #f0fdfa; font-size: 0.65rem;">For your information</span>
+            <div class="flex-grow-1 d-flex flex-column justify-content-center overflow-hidden pe-2">
+               
+               <div class="d-flex align-items-center mb-1">
+                  <span class="badge bg-light text-dark border me-2">{{ req.rfpNo }}</span>
+                  <span class="text-truncate me-2" :class="{'fw-bold text-dark': !req.isRead, 'fw-semibold text-secondary': req.isRead}" style="max-width: 40%; font-size: 0.95rem;">{{ req.payee }}</span>
+                  
+                  <div class="d-flex gap-1 flex-wrap flex-shrink-0">
+                     <span v-if="req.isArchived" class="badge bg-secondary" style="font-size: 0.65rem;">Archived</span>
+                     <span v-if="isFinalApproved(req)" class="badge bg-success" style="font-size: 0.65rem;"><i class="bi bi-award-fill me-1"></i>Approved</span>
+                     
+                     <span v-if="getUserRoleType(req) === 'action'" class="badge border border-danger text-danger" style="background-color: #fef2f2; font-size: 0.65rem;">For your action</span>
+                     <span v-else-if="getUserRoleType(req) === 'info'" class="badge border border-info text-info" style="background-color: #f0fdfa; font-size: 0.65rem;">For your information</span>
+                     
+                     <span v-if="!req.isRead && (!req.history || req.history.length === 0)" class="badge bg-danger" style="font-size: 0.65rem;"><i class="bi bi-asterisk me-1"></i>New</span>
+                     <span v-if="!req.isRead && req.history && req.history.length > 0" class="badge bg-primary" style="font-size: 0.65rem;"><i class="bi bi-chat-dots-fill me-1"></i>Thread Update</span>
+                  </div>
+               </div>
+
+               <div class="text-truncate text-muted small" :class="{'fw-semibold text-dark': !req.isRead}">
+                  {{ req.serviceKind }} / {{ req.property }}
+               </div>
+
             </div>
             
             <div class="row-actions" @click.stop>
@@ -733,17 +752,25 @@
                return false;
             }
           });
-        } else if (this.currentView === 'sent') {
+        } else if (this.currentView === 'submitted') {
           filtered = filtered.filter(req => {
             if (req.isArchived) return false;
             return (req.requestorEmail || '').toLowerCase().trim() === myEmail;
           });
         } else if (this.currentView === 'archive') {
           filtered = filtered.filter(req => req.isArchived);
-        } else if (this.currentView === 'starred') {
-          filtered = filtered.filter(req => req.isStarred && !req.isArchived);
         } else if (this.currentView === 'approved') {
           filtered = filtered.filter(req => this.isFinalApproved(req));
+        } else if (this.currentView === 'fya') {
+          filtered = filtered.filter(req => {
+            if (req.isArchived) return false;
+            return this.getUserRoleType(req) === 'action';
+          });
+        } else if (this.currentView === 'fyi') {
+          filtered = filtered.filter(req => {
+            if (req.isArchived) return false;
+            return this.getUserRoleType(req) === 'info';
+          });
         }
 
         if (this.searchInput) {
@@ -1150,7 +1177,6 @@
         Swal.fire({ toast: true, position: 'bottom-end', icon: 'info', title: `${count} marked as ${markAsRead ? 'read' : 'unread'}.`, showConfirmButton: false, timer: 2000 });
       },
 
-      // UPDATED TAT LOGIC
       getRequestStatus(req) {
          if (this.isFinalApproved(req)) return 'approved'; 
          if (this.canActionRequest(req)) return 'pending'; 
@@ -1180,10 +1206,7 @@
          if (diff < 0) diff = 0;
          if (diff === 0 && status === 'done' && this.isRequestor) return "Submitted";
 
-         const d = Math.floor(diff / (1000 * 60 * 60 * 24));
-         const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
-         const m = Math.floor((diff / 1000 / 60) % 60);
-
+         const d = Math.floor(diff / (1000 * 60 * 60 * 24)), h = Math.floor((diff / (1000 * 60 * 60)) % 24), m = Math.floor((diff / 1000 / 60) % 60);
          if (d > 0) return `${d}d ${h}h`;
          if (h > 0) return `${h}h ${m}m`;
          if (m > 0) return `${m}m`;
