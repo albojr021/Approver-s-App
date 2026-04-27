@@ -403,7 +403,7 @@
 
           <div v-for="req in paginatedRequests" :key="req.id" class="message-row" :class="{ 'unread': !req.isRead, 'read': req.isRead }" @click="viewRequestDetails(req)">
             <div class="form-check mb-0 me-3" @click.stop><input class="form-check-input" type="checkbox" :value="req.rfpNo" v-model="selectedRequests"></div>
-            <div class="star-btn me-3" @click.stop="toggleStar(req)"><i class="bi" :class="req.isStarred ? 'bi-star-fill text-warning' : 'bi-star text-muted opacity-50'"></i></div>
+            <div class="star-btn me-3" @click.stop="toggleStar(req)"><i class="bi" :class="req.dbState && req.dbState.isStarred ? 'bi-star-fill text-warning' : 'bi-star text-muted opacity-50'"></i></div>
             <div style="width: 200px;" class="d-flex align-items-center me-3 ps-1">
               <div class="inbox-avatar shadow-sm">{{ generateInitials(req.requestorEmail) }}</div>
               <div class="text-truncate fw-semibold" style="font-size: 0.95rem;">{{ req.requestorEmail }}</div>
@@ -416,7 +416,7 @@
                   <span class="text-truncate me-2" :class="{'fw-bold text-dark': !req.isRead, 'fw-semibold text-secondary': req.isRead}" style="max-width: 40%; font-size: 0.95rem;">{{ req.payee }}</span>
                   
                   <div class="d-flex gap-1 flex-wrap flex-shrink-0">
-                     <span v-if="req.isArchived" class="badge bg-secondary" style="font-size: 0.65rem;">Archived</span>
+                     <span v-if="req.dbState && req.dbState.isArchived" class="badge bg-secondary" style="font-size: 0.65rem;">Archived</span>
                      <span v-if="isFinalApproved(req)" class="badge bg-success" style="font-size: 0.65rem;"><i class="bi bi-award-fill me-1"></i>Approved</span>
                      
                      <span v-if="getUserRoleType(req) === 'action'" class="badge border border-danger text-danger" style="background-color: #fef2f2; font-size: 0.65rem;">For your action</span>
@@ -434,7 +434,7 @@
             </div>
             
             <div class="row-actions" @click.stop>
-              <button class="action-icon-btn" @click="archiveSingleFromList(req, !req.isArchived)" :title="req.isArchived ? 'Unarchive' : 'Archive'"><i class="bi" :class="req.isArchived ? 'bi-arrow-up-circle' : 'bi-archive'"></i></button>
+              <button class="action-icon-btn" @click="archiveSingleFromList(req, !(req.dbState && req.dbState.isArchived))" :title="(req.dbState && req.dbState.isArchived) ? 'Unarchive' : 'Archive'"><i class="bi" :class="(req.dbState && req.dbState.isArchived) ? 'bi-arrow-up-circle' : 'bi-archive'"></i></button>
               <button class="action-icon-btn" @click="markReadUnreadSingle(req, !req.isRead)" :title="req.isRead ? 'Mark as Unread' : 'Mark as Read'"><i class="bi" :class="req.isRead ? 'bi-envelope' : 'bi-envelope-open'"></i></button>
             </div>
 
@@ -458,12 +458,12 @@
           <div class="sticky-toolbar">
             <div>
               <button class="btn btn-back btn-sm rounded px-3 fw-bold shadow-sm" @click="returnToInbox"><i class="bi bi-arrow-left me-1"></i> Back</button>
-              <button class="btn btn-back btn-sm rounded px-3 fw-bold shadow-sm ms-2" @click="archiveSingleFromList(activeRequest, !activeRequest.isArchived)"><i class="bi" :class="activeRequest.isArchived ? 'bi-arrow-up-circle' : 'bi-archive'"></i> {{ activeRequest.isArchived ? 'Unarchive' : 'Archive' }}</button>
+              <button class="btn btn-back btn-sm rounded px-3 fw-bold shadow-sm ms-2" @click="archiveSingleFromList(activeRequest, !(activeRequest.dbState && activeRequest.dbState.isArchived))"><i class="bi" :class="(activeRequest.dbState && activeRequest.dbState.isArchived) ? 'bi-arrow-up-circle' : 'bi-archive'"></i> {{ (activeRequest.dbState && activeRequest.dbState.isArchived) ? 'Unarchive' : 'Archive' }}</button>
               <button class="btn btn-back btn-sm rounded px-3 fw-bold shadow-sm ms-2" @click="markReadUnreadSingle(activeRequest, false); returnToInbox();"><i class="bi bi-envelope me-1"></i> Mark Unread</button>
             </div>
             
             <div class="d-flex align-items-center">
-              <span v-if="activeRequest.isArchived" class="badge bg-secondary px-3 py-2 me-3">This request is Archived</span>
+              <span v-if="activeRequest.dbState && activeRequest.dbState.isArchived" class="badge bg-secondary px-3 py-2 me-3">This request is Archived</span>
               <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e2/Megaworld_logo_and_wordmark.svg/1280px-Megaworld_logo_and_wordmark.svg.png" alt="Megaworld Logo" style="height: 22px;">
             </div>
           </div>
@@ -478,7 +478,7 @@
 
           <div class="d-flex align-items-center mb-4">
              <h3 class="mb-0 text-dark" style="font-weight: 400;">{{ activeRequest.rfpNo }} - <span class="fw-bold">{{ activeRequest.payee }}</span></h3>
-             <div class="star-btn ms-3" @click="toggleStar(activeRequest)"><i class="bi fs-4" :class="activeRequest.isStarred ? 'bi-star-fill text-warning' : 'bi-star text-muted opacity-25'"></i></div>
+             <div class="star-btn ms-3" @click="toggleStar(activeRequest)"><i class="bi fs-4" :class="activeRequest.dbState && activeRequest.dbState.isStarred ? 'bi-star-fill text-warning' : 'bi-star text-muted opacity-25'"></i></div>
           </div>
 
           <div class="d-flex align-items-start mb-5">
@@ -698,7 +698,10 @@
         authForm: { email: '', password: '', regEmail: '', regName: '', regPassword: '', regConfirmPassword: '', otpCode: '', forgotEmail: '' },
         otpTargetEmail: '',
         otpIntent: '', 
-        formInput: { remarks: '', forwardEmail: '', ccEmail: '', fileObj: null } 
+        formInput: { remarks: '', forwardEmail: '', ccEmail: '', fileObj: null },
+        
+        syncQueue: [],
+        pendingStateUpdates: {} // Anti-stale lock
       }
     },
     watch: {
@@ -727,7 +730,7 @@
         
         if (this.currentView === 'requests') {
           filtered = filtered.filter(req => {
-            if (req.isArchived) return false;
+            if (req.dbState && req.dbState.isArchived) return false;
             const routing = this.getCurrentRouting(req);
             const isCurrentTarget = routing.to.includes(myEmail) || routing.cc.includes(myEmail);
             
@@ -754,21 +757,21 @@
           });
         } else if (this.currentView === 'submitted') {
           filtered = filtered.filter(req => {
-            if (req.isArchived) return false;
+            if (req.dbState && req.dbState.isArchived) return false;
             return (req.requestorEmail || '').toLowerCase().trim() === myEmail;
           });
         } else if (this.currentView === 'archive') {
-          filtered = filtered.filter(req => req.isArchived);
+          filtered = filtered.filter(req => req.dbState && req.dbState.isArchived);
         } else if (this.currentView === 'approved') {
           filtered = filtered.filter(req => this.isFinalApproved(req));
         } else if (this.currentView === 'fya') {
           filtered = filtered.filter(req => {
-            if (req.isArchived) return false;
+            if (req.dbState && req.dbState.isArchived) return false;
             return this.getUserRoleType(req) === 'action';
           });
         } else if (this.currentView === 'fyi') {
           filtered = filtered.filter(req => {
-            if (req.isArchived) return false;
+            if (req.dbState && req.dbState.isArchived) return false;
             return this.getUserRoleType(req) === 'info';
           });
         }
@@ -782,8 +785,10 @@
         }
         
         filtered.sort((a, b) => {
-          if (a.isStarred === b.isStarred) return 0;
-          return a.isStarred ? -1 : 1;
+          const aStar = a.dbState && a.dbState.isStarred;
+          const bStar = b.dbState && b.dbState.isStarred;
+          if (aStar === bStar) return 0;
+          return aStar ? -1 : 1;
         });
 
         return filtered;
@@ -802,7 +807,7 @@
       sidebarUnreadCount() {
         const myEmail = this.activeUser.email.toLowerCase().trim();
         let inboxReqs = this.requestList.filter(req => {
-          if (req.isArchived) return false;
+          if (req.dbState && req.dbState.isArchived) return false;
           const routing = this.getCurrentRouting(req);
           const isCurrentTarget = routing.to.includes(myEmail) || routing.cc.includes(myEmail);
           
@@ -841,8 +846,25 @@
       }
     },
     methods: {
-      getStorageKey(baseKey) {
-        return baseKey + '_' + this.activeUser.email.toLowerCase().trim();
+      pushStateUpdate(req) {
+         if(!req.dbState) req.dbState = { isStarred: false, isArchived: false, readState: '' };
+         
+         this.pendingStateUpdates[req.rfpNo] = Date.now(); 
+
+         const updatePayload = {
+            rfpNo: req.rfpNo,
+            isStarred: req.dbState.isStarred,
+            isArchived: req.dbState.isArchived,
+            readState: req.dbState.readState
+         };
+         this.syncQueue.push(updatePayload);
+         this.processSyncQueue();
+      },
+      processSyncQueue() {
+         if (this.syncQueue.length === 0 || typeof google === 'undefined') return;
+         const batch = [...this.syncQueue];
+         this.syncQueue = [];
+         google.script.run.syncUserTicketStates(this.activeUser.email, batch);
       },
 
       getUserRoleType(req) {
@@ -866,7 +888,7 @@
          return lastLog.action === 'Forwarded to Final Approver' && targets.includes(myEmail);
       },
       canActionRequest(req) {
-        if (!req || req.isArchived || this.isFinalApproved(req)) return false;
+        if (!req || (req.dbState && req.dbState.isArchived) || this.isFinalApproved(req)) return false;
         const myEmail = this.activeUser.email.toLowerCase().trim();
         const routing = this.getCurrentRouting(req);
         return routing.to.includes(myEmail);
@@ -1116,63 +1138,56 @@
         if (event.target.checked) this.selectedRequests = this.paginatedRequests.map(req => req.rfpNo);
         else this.selectedRequests = [];
       },
+      
       toggleStar(req) {
-        req.isStarred = !req.isStarred;
-        const storageKey = this.getStorageKey('portalStarredList');
-        let starredList = JSON.parse(localStorage.getItem(storageKey) || '[]');
-        if (req.isStarred) { if(!starredList.includes(req.rfpNo)) starredList.push(req.rfpNo); }
-        else { starredList = starredList.filter(id => id !== req.rfpNo); }
-        localStorage.setItem(storageKey, JSON.stringify(starredList));
+        if(!req.dbState) req.dbState = {};
+        req.dbState.isStarred = !req.dbState.isStarred;
+        this.pushStateUpdate(req);
       },
       archiveSingleFromList(req, toArchive) {
-        req.isArchived = toArchive;
-        const storageKey = this.getStorageKey('portalArchiveList');
-        let archiveList = JSON.parse(localStorage.getItem(storageKey) || '[]');
-        if (req.isArchived) { if(!archiveList.includes(req.rfpNo)) archiveList.push(req.rfpNo); }
-        else { archiveList = archiveList.filter(id => id !== req.rfpNo); }
-        localStorage.setItem(storageKey, JSON.stringify(archiveList));
-        Swal.fire({ toast: true, position: 'bottom-end', icon: 'success', title: `Request ${req.isArchived ? 'Archived':'Unarchived'}`, showConfirmButton: false, timer: 1500 });
+        if(!req.dbState) req.dbState = {};
+        req.dbState.isArchived = toArchive;
+        this.pushStateUpdate(req);
+        Swal.fire({ toast: true, position: 'bottom-end', icon: 'success', title: `Request ${toArchive ? 'Archived':'Unarchived'}`, showConfirmButton: false, timer: 1500 });
       },
       markReadUnreadSingle(req, markAsRead, showToast = true) {
+        if(!req.dbState) req.dbState = {};
         req.isRead = markAsRead;
-        const storageKey = this.getStorageKey('portalReadList');
-        let readList = JSON.parse(localStorage.getItem(storageKey) || '[]');
         const stateKey = req.rfpNo + "_" + (req.history ? req.history.length : 0);
-        
-        if (markAsRead) { if(!readList.includes(stateKey)) readList.push(stateKey); }
-        else { readList = readList.filter(k => k !== stateKey); }
-        localStorage.setItem(storageKey, JSON.stringify(readList));
-        
+        req.dbState.readState = markAsRead ? stateKey : 'unread';
+        this.pushStateUpdate(req);
         if (showToast) Swal.fire({ toast: true, position: 'bottom-end', icon: 'info', title: markAsRead ? `Marked as read` : `Marked as unread`, showConfirmButton: false, timer: 1500 });
       },
       bulkArchive(toArchive) {
         let count = 0; 
-        const storageKey = this.getStorageKey('portalArchiveList');
-        let archiveList = JSON.parse(localStorage.getItem(storageKey) || '[]');
+        let updates = [];
         this.requestList.forEach(req => {
           if (this.selectedRequests.includes(req.rfpNo)) {
-            req.isArchived = toArchive; count++;
-            if(toArchive) { if(!archiveList.includes(req.rfpNo)) archiveList.push(req.rfpNo); }
-            else { archiveList = archiveList.filter(id => id !== req.rfpNo); }
+            if(!req.dbState) req.dbState = {};
+            req.dbState.isArchived = toArchive; 
+            count++;
+            this.pendingStateUpdates[req.rfpNo] = Date.now();
+            updates.push({ rfpNo: req.rfpNo, isStarred: req.dbState.isStarred, isArchived: req.dbState.isArchived, readState: req.dbState.readState });
           }
         });
-        localStorage.setItem(storageKey, JSON.stringify(archiveList));
+        if (typeof google !== 'undefined') google.script.run.syncUserTicketStates(this.activeUser.email, updates);
         this.selectedRequests = [];
         Swal.fire({ toast: true, position: 'bottom-end', icon: 'success', title: `${count} requests ${toArchive ? 'archived' : 'unarchived'}.`, showConfirmButton: false, timer: 2000 });
       },
       bulkMarkReadUnread(markAsRead) {
         let count = 0; 
-        const storageKey = this.getStorageKey('portalReadList');
-        let readList = JSON.parse(localStorage.getItem(storageKey) || '[]');
+        let updates = [];
         this.requestList.forEach(req => {
           if (this.selectedRequests.includes(req.rfpNo)) {
+            if(!req.dbState) req.dbState = {};
             req.isRead = markAsRead; count++;
             const stateKey = req.rfpNo + "_" + (req.history ? req.history.length : 0);
-            if (markAsRead) { if(!readList.includes(stateKey)) readList.push(stateKey); }
-            else { readList = readList.filter(k => k !== stateKey); }
+            req.dbState.readState = markAsRead ? stateKey : 'unread';
+            this.pendingStateUpdates[req.rfpNo] = Date.now();
+            updates.push({ rfpNo: req.rfpNo, isStarred: req.dbState.isStarred, isArchived: req.dbState.isArchived, readState: req.dbState.readState });
           }
         });
-        localStorage.setItem(storageKey, JSON.stringify(readList));
+        if (typeof google !== 'undefined') google.script.run.syncUserTicketStates(this.activeUser.email, updates);
         this.selectedRequests = [];
         Swal.fire({ toast: true, position: 'bottom-end', icon: 'info', title: `${count} marked as ${markAsRead ? 'read' : 'unread'}.`, showConfirmButton: false, timer: 2000 });
       },
@@ -1217,35 +1232,60 @@
         if (typeof google !== 'undefined') {
           google.script.run.withSuccessHandler(response => {
             let data = JSON.parse(response);
-            const savedStars = JSON.parse(localStorage.getItem(this.getStorageKey('portalStarredList')) || '[]');
-            const savedArchives = JSON.parse(localStorage.getItem(this.getStorageKey('portalArchiveList')) || '[]'); 
-            const readList = JSON.parse(localStorage.getItem(this.getStorageKey('portalReadList')) || '[]');
+            
+            let autoReadUpdates = [];
 
             data.forEach(req => {
-              req.isArchived = savedArchives.includes(req.rfpNo); 
-              req.isStarred = savedStars.includes(req.rfpNo); 
-              
-              const stateKey = req.rfpNo + "_" + (req.history ? req.history.length : 0);
-              
-              if (readList.includes(stateKey)) {
-                  req.isRead = true;
+              const pendingTime = this.pendingStateUpdates[req.rfpNo];
+              if (pendingTime && (Date.now() - pendingTime < 15000)) {
+                  const localReq = this.requestList.find(r => r.rfpNo === req.rfpNo);
+                  if (localReq && localReq.dbState) {
+                      req.dbState = localReq.dbState;
+                      req.isRead = localReq.isRead;
+                  }
               } else {
-                  req.isRead = false;
-              }
-              
-              if (req.history && req.history.length > 0) {
-                 if (req.history[req.history.length - 1].actorEmail.toLowerCase() === this.activeUser.email.toLowerCase()) {
-                     req.isRead = true;
-                     if (!readList.includes(stateKey)) {
-                         readList.push(stateKey);
-                         localStorage.setItem(this.getStorageKey('portalReadList'), JSON.stringify(readList));
+                  if (pendingTime) delete this.pendingStateUpdates[req.rfpNo];
+                  
+                  if(!req.dbState) req.dbState = { isStarred: false, isArchived: false, readState: '' };
+                  const stateKey = req.rfpNo + "_" + (req.history ? req.history.length : 0);
+                  
+                  if (req.dbState.readState === stateKey) {
+                      req.isRead = true;
+                  } else {
+                      req.isRead = false;
+                  }
+                  
+                  let autoReadUpdated = false;
+                  if (req.history && req.history.length > 0) {
+                     if (req.history[req.history.length - 1].actorEmail.toLowerCase() === this.activeUser.email.toLowerCase()) {
+                         req.isRead = true;
+                         if (req.dbState.readState !== stateKey) {
+                             req.dbState.readState = stateKey;
+                             autoReadUpdated = true;
+                         }
                      }
-                 }
-              } else if (this.isRequestor && req.requestorEmail.toLowerCase() === this.activeUser.email.toLowerCase()) {
-                 req.isRead = true;
+                  } else if (this.isRequestor && req.requestorEmail.toLowerCase() === this.activeUser.email.toLowerCase()) {
+                     req.isRead = true;
+                     if (req.dbState.readState !== stateKey) {
+                         req.dbState.readState = stateKey;
+                         autoReadUpdated = true;
+                     }
+                  }
+                  
+                  if (autoReadUpdated) {
+                     autoReadUpdates.push({
+                         rfpNo: req.rfpNo,
+                         isStarred: req.dbState.isStarred,
+                         isArchived: req.dbState.isArchived,
+                         readState: req.dbState.readState
+                     });
+                  }
               }
-              
             });
+
+            if (autoReadUpdates.length > 0) {
+                google.script.run.syncUserTicketStates(this.activeUser.email, autoReadUpdates);
+            }
 
             if (this.activeRequest) {
                 const updatedActiveRequest = data.find(r => r.rfpNo === this.activeRequest.rfpNo);
@@ -1370,11 +1410,10 @@
           this.activeRequest.history.push({ timestamp: new Date().toISOString(), ...payloadData });
           
           const stateKey = this.activeRequest.rfpNo + "_" + this.activeRequest.history.length;
-          let readList = JSON.parse(localStorage.getItem(this.getStorageKey('portalReadList')) || '[]');
-          if(!readList.includes(stateKey)) {
-              readList.push(stateKey);
-              localStorage.setItem(this.getStorageKey('portalReadList'), JSON.stringify(readList));
-          }
+          if(!this.activeRequest.dbState) this.activeRequest.dbState = { isStarred: false, isArchived: false, readState: '' };
+          this.activeRequest.dbState.readState = stateKey;
+          this.activeRequest.isRead = true;
+          this.pushStateUpdate(this.activeRequest);
 
           this.actionMode = null;
           this.formInput.remarks = '';
