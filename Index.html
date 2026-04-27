@@ -204,6 +204,19 @@
       </div>
 
       <div class="mb-3">
+        <label class="form-label small fw-bold text-secondary">Department <span class="text-danger">*</span></label>
+        <select class="form-select auth-input" v-model="authForm.regDepartment" style="cursor: pointer;">
+          <option value="" disabled selected>Select Department...</option>
+          <option value="PCU">PCU</option>
+          <option value="RBG Accounting">RBG Accounting</option>
+          <option value="RBG Treasury">RBG Treasury</option>
+          <option value="MAG">MAG</option>
+          <option value="Audit/Corp">Audit/Corp</option>
+          <option value="Treasury">Treasury</option>
+        </select>
+      </div>
+
+      <div class="mb-3">
         <label class="form-label small fw-bold text-secondary">Access Title</label>
         <input type="text" class="form-control auth-input bg-light text-muted" value="APPROVER" disabled>
       </div>
@@ -424,6 +437,10 @@
                      
                      <span v-if="!req.isRead && (!req.history || req.history.length === 0)" class="badge bg-danger" style="font-size: 0.65rem;"><i class="bi bi-asterisk me-1"></i>New</span>
                      <span v-if="!req.isRead && req.history && req.history.length > 0" class="badge bg-primary" style="font-size: 0.65rem;"><i class="bi bi-chat-dots-fill me-1"></i>Thread Update</span>
+                     
+                     <span v-if="!isFinalApproved(req)" class="badge bg-light text-dark border border-dark-subtle" style="font-size: 0.65rem;">
+                        <i class="bi bi-diagram-3-fill me-1"></i> Ball with: {{ getCurrentBallWith(req) }}
+                     </span>
                   </div>
                </div>
 
@@ -504,7 +521,7 @@
                 <div class="row mb-2"><div class="col-5 text-muted small">Property</div><div class="col-7 small fw-bold text-dark">{{ activeRequest.property }}, {{ activeRequest.location }}</div></div>
                 <div class="row mb-2"><div class="col-5 text-muted small">Sector / Service</div><div class="col-7 small fw-bold text-dark">{{ activeRequest.sector }} <br> <span class="text-primary">{{ activeRequest.serviceKind }}</span></div></div>
                 <div class="row mb-2 mt-3 pt-2 border-top"><div class="col-5 text-muted small">Contract No.</div><div class="col-7 small fw-bold text-dark">{{ activeRequest.contractNo }}</div></div>
-                <div class="row"><div class="col-5 text-muted small">Contract Amt.</div><div class="col-7 small fw-bold text-primary">{{ activeRequest.contractAmount }}</div></div>
+                <div class="row"><div class="col-5 text-muted small">Contract Amt.</div><div class="col-7 small fw-bold text-primary">{{ formatAmount(activeRequest.contractAmount) }}</div></div>
               </div>
             </div>
 
@@ -514,9 +531,9 @@
                 <div class="row mb-2"><div class="col-5 text-muted small">Payor Entity</div><div class="col-7 small fw-bold text-dark">{{ activeRequest.payorName }}</div></div>
                 <div class="row mb-2"><div class="col-5 text-muted small">Payee</div><div class="col-7 small fw-bold text-dark">{{ activeRequest.payee }}</div></div>
                 <div class="row mb-2"><div class="col-5 text-muted small">Invoice No.</div><div class="col-7 small fw-bold text-dark">{{ activeRequest.invoiceNo }}</div></div>
-                <div class="row mb-2"><div class="col-5 text-muted small">SOA / Invoice Amount</div><div class="col-7 small fw-bold text-dark">{{ activeRequest.soaAmount }}</div></div>
+                <div class="row mb-2"><div class="col-5 text-muted small">SOA / Invoice Amount</div><div class="col-7 small fw-bold text-dark">{{ formatAmount(activeRequest.soaAmount) }}</div></div>
                 <div class="row mb-2"><div class="col-5 text-muted small">Billing Period</div><div class="col-7 small fw-bold text-dark">{{ activeRequest.billingPeriod }} <br> <span class="text-muted">({{ activeRequest.month }} {{ activeRequest.year }})</span></div></div>
-                <div class="row mt-3 pt-2 border-top"><div class="col-5 text-muted small">Due Date</div><div class="col-7 small fw-bold text-danger">{{ formatDisplayDate(activeRequest.dueDate) }}</div></div>
+                <div class="row mt-3 pt-2 border-top"><div class="col-5 text-muted small">Due Date</div><div class="col-7 small fw-bold text-danger">{{ formatDueDate(activeRequest.dueDate) }}</div></div>
               </div>
             </div>
           </div>
@@ -528,6 +545,10 @@
               
               <span v-if="getUserRoleType(activeRequest) === 'action'" class="badge bg-danger ms-3 py-2 px-3"><i class="bi bi-exclamation-circle me-1"></i> For your action</span>
               <span v-else-if="getUserRoleType(activeRequest) === 'info'" class="badge bg-info text-dark ms-3 py-2 px-3"><i class="bi bi-info-circle me-1"></i> For your information</span>
+              
+              <span v-if="!isFinalApproved(activeRequest)" class="badge bg-light text-dark border border-dark-subtle ms-3 py-2 px-3">
+                 <i class="bi bi-diagram-3-fill me-1"></i> Ball with: {{ getCurrentBallWith(activeRequest) }}
+              </span>
             </div>
             <div class="mt-2 mt-md-0">
               <a v-if="verifyLinkFormat(activeRequest.fileLink)" :href="activeRequest.fileLink" target="_blank" class="btn btn-primary btn-sm fw-bold shadow-sm"><i class="bi bi-file-earmark-pdf-fill me-1"></i> View Attached Document</a>
@@ -546,7 +567,12 @@
                       <span class="fw-bold text-dark">{{ log.actorEmail }}</span>
                       <span class="text-muted small">{{ formatDisplayDate(log.timestamp) }}</span>
                     </div>
-                    <div class="mb-2"><span class="badge" :class="log.action.includes('Return') ? 'bg-danger' : (log.action.includes('Reply') || log.action.includes('Replied') ? 'bg-info text-dark' : (log.action.includes('Final') ? 'bg-primary' : 'bg-success'))">{{ log.action }}</span></div>
+                    
+                    <div class="mb-2">
+                       <span class="badge" :class="log.action.includes('Return') ? 'bg-danger' : (log.action.includes('Reply') || log.action.includes('Replied') ? 'bg-info text-dark' : (log.action.includes('Final') ? 'bg-primary' : 'bg-success'))">
+                          {{ log.action }} <span v-if="log.ballWith && !log.action.includes('Final')">➔ {{ log.ballWith }}</span>
+                       </span>
+                    </div>
                     
                     <div class="text-muted small mb-2" v-if="log.action !== 'Final Approved'">
                       <div><strong>To:</strong> {{ log.targetEmail }}</div>
@@ -695,13 +721,13 @@
         idleTimer: null,
         idleMinutes: 0,
         
-        authForm: { email: '', password: '', regEmail: '', regName: '', regPassword: '', regConfirmPassword: '', otpCode: '', forgotEmail: '' },
+        authForm: { email: '', password: '', regEmail: '', regName: '', regDepartment: '', regPassword: '', regConfirmPassword: '', otpCode: '', forgotEmail: '' },
         otpTargetEmail: '',
         otpIntent: '', 
         formInput: { remarks: '', forwardEmail: '', ccEmail: '', fileObj: null },
         
         syncQueue: [],
-        pendingStateUpdates: {} // Anti-stale lock
+        pendingStateUpdates: {} 
       }
     },
     watch: {
@@ -846,6 +872,22 @@
       }
     },
     methods: {
+      getStorageKey(baseKey) {
+        return baseKey + '_' + this.activeUser.email.toLowerCase().trim();
+      },
+      
+      formatAmount(val) {
+        if (!val) return '';
+        let num = Number(val.toString().replace(/,/g, ''));
+        if (!isNaN(num)) {
+            return num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+        return val;
+      },
+      formatDueDate(rawDate) {
+        return !rawDate ? '' : new Date(rawDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      },
+
       pushStateUpdate(req) {
          if(!req.dbState) req.dbState = { isStarred: false, isArchived: false, readState: '' };
          
@@ -874,6 +916,14 @@
          if (routing.to.includes(myEmail)) return 'action';
          if (routing.cc.includes(myEmail)) return 'info';
          return 'none';
+      },
+
+      getCurrentBallWith(req) {
+         if (this.isFinalApproved(req)) return 'Completed';
+         if (req.history && req.history.length > 0) {
+             return req.history[req.history.length - 1].ballWith || 'Unknown';
+         }
+         return req.initialBallWith || 'Unknown';
       },
 
       isFinalApproved(req) {
@@ -1010,11 +1060,13 @@
         } else { setTimeout(() => { this.appLoading=false; if(this.otpIntent==='register') this.switchAuthView('register-form'); else this.switchAuthView('forgot-reset'); }, 1000); }
       },
       submitRegistration() {
-        if(!this.authForm.regName || !this.authForm.regPassword) return Swal.fire('Incomplete', 'Please fill all required fields.', 'warning');
+        if(!this.authForm.regName || !this.authForm.regPassword || !this.authForm.regDepartment) return Swal.fire('Incomplete', 'Please fill all required fields, including Department.', 'warning');
         if(this.authForm.regPassword !== this.authForm.regConfirmPassword) return Swal.fire('Mismatch', 'Passwords do not match.', 'error');
         if(this.passwordScore < 2) return Swal.fire('Weak Password', 'Please create a stronger password.', 'warning');
         this.appLoading = true; this.loaderMessage = "Creating secure profile...";
-        const payload = { fullName: this.authForm.regName, email: this.otpTargetEmail, password: this.authForm.regPassword };
+        
+        const payload = { fullName: this.authForm.regName, email: this.otpTargetEmail, password: this.authForm.regPassword, department: this.authForm.regDepartment };
+        
         if (typeof google !== 'undefined') {
           google.script.run.withSuccessHandler(res => {
             this.appLoading = false; let result = JSON.parse(res);
@@ -1402,10 +1454,12 @@
           fileObj: this.formInput.fileObj 
         };
 
-        const handleSuccess = (fileLinkUrl) => {
+        const handleSuccess = (responseData) => {
           this.isSendingAction = false;
           if(!this.activeRequest.history) this.activeRequest.history = [];
-          if (fileLinkUrl) payloadData.fileLink = fileLinkUrl;
+          
+          if (responseData.fileLink) payloadData.fileLink = responseData.fileLink;
+          if (responseData.ballWith) payloadData.ballWith = responseData.ballWith;
 
           this.activeRequest.history.push({ timestamp: new Date().toISOString(), ...payloadData });
           
@@ -1431,7 +1485,7 @@
           google.script.run.withSuccessHandler(response => {
             const result = JSON.parse(response);
             if(result.success) {
-              handleSuccess(result.fileLink);
+              handleSuccess(result);
             } else { 
               this.isSendingAction = false;
               Swal.fire('System Error', result.message, 'error'); 
@@ -1439,7 +1493,7 @@
           }).processAction(payloadData);
         } else {
           setTimeout(() => {
-            handleSuccess('https://dummy-drive-link.com/file');
+            handleSuccess({ fileLink: 'https://dummy.com', ballWith: 'Testing Dept' });
           }, 1500);
         }
       }
