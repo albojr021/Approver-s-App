@@ -315,13 +315,6 @@
           </li>
 
           <li class="nav-item">
-            <a class="nav-link" :class="{'active': currentView === 'starred'}" @click="setView('starred')">
-              <div class="icon-container"><i class="bi bi-star-fill"></i></div>
-              <span class="nav-text fw-bold">Starred</span>
-            </a>
-          </li>
-
-          <li class="nav-item">
             <a class="nav-link" :class="{'active': currentView === 'archive'}" @click="setView('archive')">
               <div class="icon-container"><i class="bi bi-archive-fill"></i></div>
               <span class="nav-text fw-bold">Archived</span>
@@ -388,7 +381,7 @@
               </div>
               
               <h6 v-else class="mb-0 fw-bold text-secondary text-uppercase ms-1" style="font-size: 0.9rem;">
-                <i class="bi me-2" :class="currentView === 'archive' ? 'bi-archive-fill' : (currentView === 'all' ? 'bi-collection-fill' : (currentView === 'starred' ? 'bi-star-fill text-warning' : (currentView === 'sent' ? 'bi-send-fill text-primary' : (currentView === 'approved' ? 'bi-award-fill text-success' : 'bi-inbox-fill'))))"></i> 
+                <i class="bi me-2" :class="currentView === 'archive' ? 'bi-archive-fill' : (currentView === 'all' ? 'bi-collection-fill' : (currentView === 'sent' ? 'bi-send-fill text-primary' : (currentView === 'approved' ? 'bi-award-fill text-success' : 'bi-inbox-fill')))"></i> 
                 {{ currentView === 'requests' ? 'Requests Inbox' : (currentView === 'sent' ? 'Sent Requests' : currentView) }} 
                 <span v-if="searchInput" class="text-primary text-lowercase ms-2"> (filtered)</span>
               </h6>
@@ -760,6 +753,12 @@
             return keywords.every(kw => searchString.includes(kw));
           });
         }
+        
+        filtered.sort((a, b) => {
+          if (a.isStarred === b.isStarred) return 0;
+          return a.isStarred ? -1 : 1;
+        });
+
         return filtered;
       },
       totalPages() { return Math.ceil(this.processedRequests.length / this.itemsPerPage) || 1; },
@@ -1159,44 +1158,21 @@
       },
       getTurnaroundTime(req) {
          if (!req.timestamp) return 'N/A';
+         const start = new Date(req.timestamp).getTime();
+         let end = new Date().getTime();
          const status = this.getRequestStatus(req);
-         const myEmail = this.activeUser.email.toLowerCase().trim();
-
-         let start, end;
 
          if (status === 'approved') {
-            start = new Date(req.timestamp).getTime();
             const finalLog = req.history.find(log => log.action === 'Final Approved');
-            end = finalLog ? new Date(finalLog.timestamp).getTime() : new Date().getTime();
-         } 
-         else if (status === 'pending') {
-            start = (req.history && req.history.length > 0)
-                    ? new Date(req.history[req.history.length - 1].timestamp).getTime()
-                    : new Date(req.timestamp).getTime();
-            end = new Date().getTime();
-         } 
-         else { 
-            let myLogIndex = -1;
-            if (req.history) {
-               for (let i = req.history.length - 1; i >= 0; i--) {
-                   if (req.history[i].actorEmail.toLowerCase() === myEmail) {
-                       myLogIndex = i;
-                       break;
-                   }
+            if (finalLog) end = new Date(finalLog.timestamp).getTime();
+         } else if (status === 'done') {
+            const myLogs = req.history ? req.history.filter(log => log.actorEmail.toLowerCase() === this.activeUser.email.toLowerCase()) : [];
+            if (myLogs.length > 0) {
+                end = new Date(myLogs[myLogs.length - 1].timestamp).getTime();
+            } else if (this.isRequestor && req.requestorEmail.toLowerCase() === this.activeUser.email.toLowerCase()) {
+               if (req.history && req.history.length > 0) {
+                  end = new Date(req.history[req.history.length - 1].timestamp).getTime();
                }
-            }
-
-            if (myLogIndex > -1) {
-               end = new Date(req.history[myLogIndex].timestamp).getTime();
-               start = myLogIndex > 0 ? new Date(req.history[myLogIndex - 1].timestamp).getTime() : new Date(req.timestamp).getTime();
-            } else if (this.isRequestor && req.requestorEmail.toLowerCase() === myEmail) {
-               start = new Date(req.timestamp).getTime();
-               end = start;
-            } else {
-               start = (req.history && req.history.length > 0)
-                    ? new Date(req.history[req.history.length - 1].timestamp).getTime()
-                    : new Date(req.timestamp).getTime();
-               end = new Date().getTime();
             }
          }
 
