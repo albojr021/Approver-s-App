@@ -84,16 +84,48 @@
     .read .inbox-avatar { background-color: #e2e8f0; color: #64748b; }
 
     /* DETAIL VIEW */
-    .detail-container { position: relative; flex: 1; overflow-y: auto; background: #ffffff; margin: 20px; padding: 0 40px 30px 40px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; scroll-behavior: smooth; }
-    .sticky-toolbar { position: sticky; top: 0; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(5px); z-index: 50; padding: 20px 0 15px 0; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
-    .info-card { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; transition: transform 0.2s; }
-    .info-card:hover { transform: translateY(-3px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); }
+    .detail-container { position: relative; flex: 1; overflow-y: auto; background: #ffffff; margin: 20px; padding: 0 30px 30px 30px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; scroll-behavior: smooth; }
+    .sticky-toolbar { position: sticky; top: 0; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(5px); z-index: 50; padding: 15px 0; margin-bottom: 15px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; }
+    .info-card { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; transition: transform 0.2s; }
+    .info-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05); }
     
+    /* GMAIL STYLE COMPACT THREAD CSS */
+    .history-scroll-container { max-height: 400px; overflow-y: auto; scrollbar-width: thin; }
+    .history-scroll-container::-webkit-scrollbar { width: 6px; }
+    .history-scroll-container::-webkit-scrollbar-thumb { background-color: #cbd5e1; border-radius: 3px; }
+    .thread-card { background-color: transparent !important; border-bottom: 1px solid #f1f5f9 !important; border-radius: 0 !important; box-shadow: none !important; padding: 15px 0 !important; margin-bottom: 0 !important; }
+    .thread-card:last-child { border-bottom: none !important; }
+    .thread-avatar { width: 34px; height: 34px; font-size: 0.85rem; }
+    .thread-header { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+    .thread-actor { font-weight: 600; font-size: 0.85rem; color: #1e293b; }
+    .thread-meta { font-size: 0.7rem; color: #64748b; line-height: 1.2; }
+    
+    /* HIGHLIGHTED REMARKS CONTAINER WITH FLEXBOX */
+    .thread-remarks { 
+      font-size: 0.95rem; 
+      color: #0f172a; 
+      margin-top: 10px; 
+      line-height: 1.5;
+      background-color: #f8fafc;
+      padding: 14px 18px;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+      border-left: 4px solid var(--accent-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 15px;
+    }
+    .thread-remarks-text {
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
     .loader-screen { position: fixed; inset: 0; background: rgba(255, 255, 255, 0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; }
     .loader-screen img { max-width: 250px; animation: pulse 1.8s infinite alternate ease-in-out; }
     @keyframes pulse { 0% { transform: scale(0.95); opacity: 0.8; } 100% { transform: scale(1.05); opacity: 1; } }
     .spinner-border.text-primary { border-color: var(--accent-color) !important; border-right-color: transparent !important; }
-    .thread-quote { border-left: 4px solid var(--accent-color); background-color: #ffffff; }
+    
     .btn-back { background-color: #ffffff; color: #475569; border: 1px solid #cbd5e1; transition: all 0.2s ease; }
     .btn-back:hover { background-color: #f1f5f9; color: var(--accent-color); border-color: #94a3b8; }
 
@@ -121,19 +153,21 @@
     .meter-strong { background-color: #10b981; width: 100%; }
     
     /* APPROVED BANNER */
-    .approved-banner { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 12px 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2); display: flex; align-items: center; }
+    .approved-banner { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 10px 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2); display: flex; align-items: center; }
   </style>
 </head>
 <body>
 
 <div id="approvalApp">
 
+  <!-- GLOBAL LOADER -->
   <div v-if="appLoading" class="loader-screen">
     <img src="https://d2nnykqiaju69u.cloudfront.net/pslife_photos/Maricel_temp/logos/megaworld%20lifestyel%20malls.png" alt="Megaworld Lifestyle Malls">
     <div class="spinner-border text-primary mt-4" role="status"></div>
     <h5 class="mt-4 text-secondary fw-bold">{{ loaderMessage }}</h5>
   </div>
 
+  <!-- ================= AUTHENTICATION MODULE ================= -->
   <div v-if="!isAuthenticated && !appLoading" class="d-flex align-items-center justify-content-center" style="height: 100vh; background-color: var(--app-bg);">
     
     <div v-if="authView === 'login'" class="auth-card">
@@ -272,6 +306,7 @@
 
   </div>
 
+  <!-- ================= MAIN APP WORKSPACE ================= -->
   <div v-if="isAuthenticated && !appLoading" class="app-root">
     
     <header class="app-header p-3 d-flex align-items-center px-4">
@@ -308,7 +343,7 @@
                 <i class="bi bi-inbox-fill"></i>
                 <span class="collapsed-badge badge rounded-pill bg-danger" v-if="sidebarUnreadCount > 0">{{ sidebarUnreadCount }}</span>
               </div>
-              <span class="nav-text fw-bold">Requests Inbox</span>
+              <span class="nav-text fw-bold">All</span>
               <span class="badge bg-danger rounded-pill ms-auto expanded-badge" v-if="sidebarUnreadCount > 0">{{ sidebarUnreadCount }}</span>
             </a>
           </li>
@@ -377,6 +412,7 @@
 
       <main class="content-area">
         
+        <!-- LIST VIEW -->
         <div id="inboxListScroll" class="inbox-container" v-if="!activeRequest">
           <div class="px-4 py-2 border-bottom d-flex justify-content-between align-items-center sticky-top bg-light" style="min-height: 50px; z-index: 10;">
             <div class="d-flex align-items-center">
@@ -470,6 +506,7 @@
           </div>
         </div>
 
+        <!-- DETAIL VIEW -->
         <div id="detailViewScroll" class="detail-container" v-else>
           
           <div class="sticky-toolbar">
@@ -485,7 +522,7 @@
             </div>
           </div>
 
-          <div v-if="isFinalApproved(activeRequest)" class="approved-banner mb-4">
+          <div v-if="isFinalApproved(activeRequest)" class="approved-banner mb-3">
              <i class="bi bi-award-fill fs-4 me-3"></i>
              <div>
                <h5 class="mb-0 fw-bold">Request Approved</h5>
@@ -493,13 +530,13 @@
              </div>
           </div>
 
-          <div class="d-flex align-items-center mb-4">
-             <h3 class="mb-0 text-dark" style="font-weight: 400;">{{ activeRequest.rfpNo }} - <span class="fw-bold">{{ activeRequest.payee }}</span></h3>
-             <div class="star-btn ms-3" @click="toggleStar(activeRequest)"><i class="bi fs-4" :class="activeRequest.dbState && activeRequest.dbState.isStarred ? 'bi-star-fill text-warning' : 'bi-star text-muted opacity-25'"></i></div>
+          <div class="d-flex align-items-center mb-3">
+             <h4 class="mb-0 text-dark" style="font-weight: 400;">{{ activeRequest.rfpNo }} - <span class="fw-bold">{{ activeRequest.payee }}</span></h4>
+             <div class="star-btn ms-3" @click="toggleStar(activeRequest)"><i class="bi fs-5" :class="activeRequest.dbState && activeRequest.dbState.isStarred ? 'bi-star-fill text-warning' : 'bi-star text-muted opacity-25'"></i></div>
           </div>
 
-          <div class="d-flex align-items-start mb-5">
-            <div class="bg-primary text-white rounded-circle d-flex justify-content-center align-items-center me-3 shadow-sm" style="width: 48px; height: 48px; font-size: 1.3rem; font-weight: bold;">
+          <div class="d-flex align-items-start mb-4 pb-3 border-bottom">
+            <div class="bg-primary text-white rounded-circle d-flex justify-content-center align-items-center me-3 shadow-sm" style="width: 42px; height: 42px; font-size: 1.1rem; font-weight: bold;">
               {{ generateInitials(activeRequest.requestorEmail) }}
             </div>
             <div class="flex-grow-1">
@@ -507,92 +544,121 @@
                 <span class="fw-bold fs-6 text-dark">{{ activeRequest.requestorEmail }}</span>
                 <span class="text-muted small">{{ formatDisplayDate(activeRequest.timestamp) }}</span>
               </div>
-              <div class="text-muted small mt-1">
-                <div><strong class="text-secondary">To:</strong> {{ activeRequest.primaryRecipient }}</div>
-                <div v-if="activeRequest.secondaryRecipient"><strong class="text-secondary">Cc:</strong> {{ activeRequest.secondaryRecipient }}</div>
+              <div class="text-muted" style="font-size: 0.8rem; margin-top: 2px;">
+                <span class="me-3"><strong class="text-secondary">To:</strong> {{ activeRequest.primaryRecipient }}</span>
+                <span v-if="activeRequest.secondaryRecipient"><strong class="text-secondary">Cc:</strong> {{ activeRequest.secondaryRecipient }}</span>
               </div>
             </div>
           </div>
 
-          <div class="row g-4 mb-4">
+          <!-- Info Cards -->
+          <div class="row g-3 mb-4">
             <div class="col-md-6">
-              <div class="info-card h-100 p-4">
-                <h6 class="text-primary border-bottom border-primary border-opacity-25 pb-2 mb-3 fw-bold"><i class="bi bi-building-gear me-2"></i>Location & Contract</h6>
-                <div class="row mb-2"><div class="col-5 text-muted small">Property</div><div class="col-7 small fw-bold text-dark">{{ activeRequest.property }}, {{ activeRequest.location }}</div></div>
-                <div class="row mb-2"><div class="col-5 text-muted small">Sector / Service</div><div class="col-7 small fw-bold text-dark">{{ activeRequest.sector }} <br> <span class="text-primary">{{ activeRequest.serviceKind }}</span></div></div>
-                <div class="row mb-2 mt-3 pt-2 border-top"><div class="col-5 text-muted small">Contract No.</div><div class="col-7 small fw-bold text-dark">{{ activeRequest.contractNo }}</div></div>
-                <div class="row"><div class="col-5 text-muted small">Contract Amt.</div><div class="col-7 small fw-bold text-primary">{{ formatAmount(activeRequest.contractAmount) }}</div></div>
+              <div class="info-card h-100 p-3">
+                <h6 class="text-primary border-bottom border-primary border-opacity-25 pb-2 mb-2 fw-bold" style="font-size: 0.9rem;"><i class="bi bi-building-gear me-2"></i>Location & Contract</h6>
+                <div class="row mb-1"><div class="col-5 text-muted" style="font-size: 0.8rem;">Property</div><div class="col-7 fw-bold text-dark" style="font-size: 0.8rem;">{{ activeRequest.property }}, {{ activeRequest.location }}</div></div>
+                <div class="row mb-1"><div class="col-5 text-muted" style="font-size: 0.8rem;">Sector / Service</div><div class="col-7 fw-bold text-dark" style="font-size: 0.8rem;">{{ activeRequest.sector }} <br> <span class="text-primary">{{ activeRequest.serviceKind }}</span></div></div>
+                <div class="row mb-1 mt-2 pt-2 border-top"><div class="col-5 text-muted" style="font-size: 0.8rem;">Contract No.</div><div class="col-7 fw-bold text-dark" style="font-size: 0.8rem;">{{ activeRequest.contractNo }}</div></div>
+                <div class="row"><div class="col-5 text-muted" style="font-size: 0.8rem;">Contract Amt.</div><div class="col-7 fw-bold text-primary" style="font-size: 0.85rem;">{{ formatAmount(activeRequest.contractAmount) }}</div></div>
               </div>
             </div>
 
             <div class="col-md-6">
-              <div class="info-card h-100 p-4">
-                <h6 class="text-success border-bottom border-success border-opacity-25 pb-2 mb-3 fw-bold"><i class="bi bi-receipt me-2"></i>Billing Summary</h6>
-                <div class="row mb-2"><div class="col-5 text-muted small">Payor Entity</div><div class="col-7 small fw-bold text-dark">{{ activeRequest.payorName }}</div></div>
-                <div class="row mb-2"><div class="col-5 text-muted small">Payee</div><div class="col-7 small fw-bold text-dark">{{ activeRequest.payee }}</div></div>
-                <div class="row mb-2"><div class="col-5 text-muted small">Invoice No.</div><div class="col-7 small fw-bold text-dark">{{ activeRequest.invoiceNo }}</div></div>
-                <div class="row mb-2"><div class="col-5 text-muted small">SOA / Invoice Amount</div><div class="col-7 small fw-bold text-dark">{{ formatAmount(activeRequest.soaAmount) }}</div></div>
-                <div class="row mb-2"><div class="col-5 text-muted small">Billing Period</div><div class="col-7 small fw-bold text-dark">{{ activeRequest.billingPeriod }} <br> <span class="text-muted">({{ activeRequest.month }} {{ activeRequest.year }})</span></div></div>
-                <div class="row mt-3 pt-2 border-top"><div class="col-5 text-muted small">Due Date</div><div class="col-7 small fw-bold text-danger">{{ formatDueDate(activeRequest.dueDate) }}</div></div>
+              <div class="info-card h-100 p-3">
+                <h6 class="text-success border-bottom border-success border-opacity-25 pb-2 mb-2 fw-bold" style="font-size: 0.9rem;"><i class="bi bi-receipt me-2"></i>Billing Summary</h6>
+                <div class="row mb-1"><div class="col-5 text-muted" style="font-size: 0.8rem;">Payor Entity</div><div class="col-7 fw-bold text-dark" style="font-size: 0.8rem;">{{ activeRequest.payorName }}</div></div>
+                <div class="row mb-1"><div class="col-5 text-muted" style="font-size: 0.8rem;">Payee</div><div class="col-7 fw-bold text-dark" style="font-size: 0.8rem;">{{ activeRequest.payee }}</div></div>
+                <div class="row mb-1"><div class="col-5 text-muted" style="font-size: 0.8rem;">Invoice No.</div><div class="col-7 fw-bold text-dark" style="font-size: 0.8rem;">{{ activeRequest.invoiceNo }}</div></div>
+                <div class="row mb-1"><div class="col-5 text-muted" style="font-size: 0.8rem;">SOA / Inv. Amount</div><div class="col-7 fw-bold text-dark" style="font-size: 0.85rem;">{{ formatAmount(activeRequest.soaAmount) }}</div></div>
+                <div class="row mb-1"><div class="col-5 text-muted" style="font-size: 0.8rem;">Billing Period</div><div class="col-7 fw-bold text-dark" style="font-size: 0.8rem;">{{ activeRequest.billingPeriod }} <br> <span class="text-muted fw-normal">({{ activeRequest.month }} {{ activeRequest.year }})</span></div></div>
+                <div class="row mt-2 pt-2 border-top"><div class="col-5 text-muted" style="font-size: 0.8rem;">Due Date</div><div class="col-7 fw-bold text-danger" style="font-size: 0.85rem;">{{ formatDueDate(activeRequest.dueDate) }}</div></div>
               </div>
             </div>
           </div>
 
-          <div class="d-flex flex-wrap justify-content-between align-items-center bg-white border rounded p-3 mb-5 shadow-sm">
-            <div class="d-flex align-items-center">
+          <div class="d-flex flex-wrap justify-content-between align-items-center bg-white border rounded p-3 mb-4 shadow-sm">
+            <div class="d-flex align-items-center flex-wrap gap-2">
               <span class="text-muted small fw-bold me-2"><i class="bi bi-info-circle me-1"></i>General Status:</span>
               <span class="badge bg-secondary text-uppercase py-2 px-3">{{ activeRequest.status }}</span>
               
-              <span v-if="getUserRoleType(activeRequest) === 'action'" class="badge bg-danger ms-3 py-2 px-3"><i class="bi bi-exclamation-circle me-1"></i> For your action</span>
-              <span v-else-if="getUserRoleType(activeRequest) === 'info'" class="badge bg-info text-dark ms-3 py-2 px-3"><i class="bi bi-info-circle me-1"></i> For your information</span>
+              <span v-if="getUserRoleType(activeRequest) === 'action'" class="badge bg-danger py-2 px-3"><i class="bi bi-exclamation-circle me-1"></i> For your action</span>
+              <span v-else-if="getUserRoleType(activeRequest) === 'info'" class="badge bg-info text-dark py-2 px-3"><i class="bi bi-info-circle me-1"></i> For your information</span>
               
-              <span v-if="!isFinalApproved(activeRequest)" class="badge bg-light text-dark border border-dark-subtle ms-3 py-2 px-3">
+              <span v-if="!isFinalApproved(activeRequest)" class="badge bg-light text-dark border border-dark-subtle py-2 px-3">
                  <i class="bi bi-diagram-3-fill me-1"></i> Ball with: {{ getCurrentBallWith(activeRequest) }}
               </span>
             </div>
+            
             <div class="mt-2 mt-md-0">
-              <a v-if="verifyLinkFormat(activeRequest.fileLink)" :href="activeRequest.fileLink" target="_blank" class="btn btn-primary btn-sm fw-bold shadow-sm"><i class="bi bi-file-earmark-pdf-fill me-1"></i> View Attached Document</a>
+              <a v-if="verifyLinkFormat(activeRequest.fileLink)" :href="activeRequest.fileLink" target="_blank" class="btn btn-primary btn-sm fw-bold shadow-sm">
+                 <i class="bi bi-file-earmark-arrow-down-fill me-1"></i> {{ formatFileName(activeRequest.fileName) }}
+              </a>
               <span v-else class="text-danger small fw-bold"><i class="bi bi-exclamation-triangle-fill me-1"></i> Invalid Document Link Provided</span>
             </div>
           </div>
 
-          <div v-if="activeRequest.history && activeRequest.history.length > 0" class="mb-5">
-            <h5 class="fw-bold text-dark mb-3"><i class="bi bi-check2-circle text-primary me-2"></i>Action Done</h5>
-            <div v-for="(log, index) in activeRequest.history" :key="index" class="card border-0 shadow-sm mb-3" style="background-color: #f8fafc;">
-              <div class="card-body p-4">
+          <!-- THREAD CONTAINER -->
+          <div v-if="activeRequest.history && activeRequest.history.length > 0" class="mb-4">
+            <h6 class="fw-bold text-dark mb-2"><i class="bi bi-chat-left-text text-primary me-2"></i>Conversation Thread</h6>
+            
+            <div id="historyScrollBox" class="history-scroll-container border rounded bg-white p-3 shadow-sm">
+              
+              <!-- Individual Chat Card -->
+              <div v-for="(log, index) in activeRequest.history" :key="index" class="thread-card">
                 <div class="d-flex align-items-start">
-                  <div class="bg-secondary text-white rounded-circle d-flex justify-content-center align-items-center me-3 shadow-sm" style="width: 40px; height: 40px; font-weight: bold;">{{ generateInitials(log.actorEmail) }}</div>
-                  <div class="flex-grow-1">
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                      <span class="fw-bold text-dark">{{ log.actorEmail }}</span>
-                      <span class="text-muted small">{{ formatDisplayDate(log.timestamp) }}</span>
-                    </div>
-                    
-                    <div class="mb-2">
-                       <span class="badge" :class="log.action.includes('Return') ? 'bg-danger' : (log.action.includes('Reply') || log.action.includes('Replied') ? 'bg-info text-dark' : (log.action.includes('Final') ? 'bg-primary' : 'bg-success'))">
+                  
+                  <div class="bg-secondary text-white rounded-circle d-flex justify-content-center align-items-center me-3 shadow-sm thread-avatar flex-shrink-0">
+                    {{ generateInitials(log.actorEmail) }}
+                  </div>
+                  
+                  <div class="flex-grow-1 min-vw-0">
+                    <!-- LINEAR HEADER: Email + Badge + Date -->
+                    <div class="thread-header mb-1">
+                      <span class="thread-actor">{{ log.actorEmail }}</span>
+                      
+                      <span class="badge" :class="log.action.includes('Return') ? 'bg-danger' : (log.action.includes('Reply') || log.action.includes('Replied') ? 'bg-info text-dark' : (log.action.includes('Final') ? 'bg-primary' : 'bg-success'))" style="font-size: 0.65rem; padding: 0.35em 0.5em;">
                           {{ log.action }} <span v-if="log.ballWith && !log.action.includes('Final')">➔ {{ log.ballWith }}</span>
                        </span>
+                      
+                      <!-- Added TAT per step -->
+                      <span class="ms-auto d-flex align-items-center text-muted" style="font-size: 0.7rem;">
+                        <span class="badge bg-success bg-opacity-10 text-success border border-success-subtle me-2" style="font-size: 0.65rem;" title="Turnaround Time for this action">
+                           <i class="bi bi-check2-circle me-1"></i>{{ getLogTAT(log, index) }}
+                        </span>
+                        {{ formatDisplayDate(log.timestamp) }}
+                      </span>
                     </div>
                     
-                    <div class="text-muted small mb-2" v-if="log.action !== 'Final Approved'">
-                      <div><strong>To:</strong> {{ log.targetEmail }}</div>
-                      <div v-if="log.ccEmail"><strong>Cc:</strong> {{ log.ccEmail }}</div>
+                    <!-- COMPACT RECIPIENTS -->
+                    <div class="thread-meta mb-2" v-if="log.action !== 'Final Approved'">
+                      <span class="me-3"><strong>To:</strong> {{ log.targetEmail }}</span>
+                      <span v-if="log.ccEmail"><strong>Cc:</strong> {{ log.ccEmail }}</span>
                     </div>
                     
-                    <div class="p-3 thread-quote rounded small text-dark mt-2 shadow-sm">"{{ log.remarks }}"</div>
-                    
-                    <div v-if="log.fileLink" class="mt-3">
-                      <a :href="log.fileLink" target="_blank" class="badge bg-primary text-decoration-none p-2 shadow-sm"><i class="bi bi-paperclip me-1"></i> View Attached File</a>
+                    <!-- HIGHLIGHTED REMARKS WITH INLINE ATTACHMENT -->
+                    <div class="thread-remarks shadow-sm">
+                      <div class="thread-remarks-text">{{ log.remarks }}</div>
+                      
+                      <div v-if="log.fileLink" class="flex-shrink-0 mt-1 mt-sm-0">
+                        <a :href="log.fileLink" target="_blank" class="badge bg-light text-primary border border-primary text-decoration-none py-1 px-2 shadow-sm" style="font-size: 0.75rem;">
+                           <i class="bi bi-file-earmark-arrow-down-fill me-1"></i> {{ formatFileName(log.fileName) }}
+                        </a>
+                      </div>
                     </div>
+                    
                   </div>
+
                 </div>
               </div>
+
             </div>
           </div>
 
+          <!-- SMART ACTION REQUIRED PANEL -->
           <div class="card border border-primary border-opacity-25 shadow-sm mt-4 mb-4" v-if="canActionRequest(activeRequest)">
             <div class="card-body p-4">
               
+              <!-- Action Selection State -->
               <div v-if="!actionMode" class="d-flex gap-3">
                 <button v-if="isRequestor" class="btn btn-outline-primary rounded-pill px-4 fw-bold shadow-sm" @click="promptActionMode('reply_approver')">
                   <i class="bi bi-reply-fill me-2"></i> Reply
@@ -727,7 +793,8 @@
         formInput: { remarks: '', forwardEmail: '', ccEmail: '', fileObj: null },
         
         syncQueue: [],
-        pendingStateUpdates: {} 
+        pendingStateUpdates: {},
+        holidayCache: {} 
       }
     },
     watch: {
@@ -887,10 +954,59 @@
       formatDueDate(rawDate) {
         return !rawDate ? '' : new Date(rawDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
       },
+      
+      formatFileName(filename) {
+          if (!filename) return 'View Attached File';
+          if (filename === 'Loading...') return 'Fetching file info...';
+          if (filename === 'Unknown_File') return 'View Attached Document';
+          
+          const maxLength = 35;
+          if (filename.length <= maxLength) return filename;
+          
+          const lastDotIndex = filename.lastIndexOf('.');
+          if (lastDotIndex === -1 || lastDotIndex < filename.length - 6) {
+              return filename.substring(0, maxLength - 3) + '...';
+          }
+          
+          const ext = filename.substring(lastDotIndex);
+          const name = filename.substring(0, lastDotIndex);
+          const keepLength = maxLength - ext.length - 3; 
+          return name.substring(0, keepLength) + '...' + ext;
+      },
+      
+      fetchFileNamesForActiveRequest() {
+           const req = this.activeRequest;
+           let urls = [];
+           if (req.fileLink && !req.fileName) urls.push(req.fileLink);
+           if (req.history) {
+               req.history.forEach(log => {
+                   if (log.fileLink && !log.fileName) urls.push(log.fileLink);
+               });
+           }
+           
+           if (urls.length > 0) {
+               if (req.fileLink && !req.fileName) req.fileName = 'Loading...';
+               req.history.forEach(log => { if(log.fileLink && !log.fileName) log.fileName = 'Loading...'; });
+               
+               if (typeof google !== 'undefined') {
+                   google.script.run.withSuccessHandler(res => {
+                       const namesMap = JSON.parse(res);
+                       if (req.fileLink && namesMap[req.fileLink]) req.fileName = namesMap[req.fileLink];
+                       req.history.forEach(log => {
+                           if(log.fileLink && namesMap[log.fileLink]) log.fileName = namesMap[log.fileLink];
+                       });
+                   }).getDriveFileNames(urls);
+               } else {
+                   setTimeout(() => {
+                       if (req.fileLink) req.fileName = 'Attached_File.pdf';
+                       req.history.forEach(log => { if(log.fileLink) log.fileName = 'Reference.xlsx'; });
+                   }, 1000);
+               }
+           }
+      },
 
       pushStateUpdate(req) {
          if(!req.dbState) req.dbState = { isStarred: false, isArchived: false, readState: '' };
-         
          this.pendingStateUpdates[req.rfpNo] = Date.now(); 
 
          const updatePayload = {
@@ -1244,6 +1360,101 @@
         Swal.fire({ toast: true, position: 'bottom-end', icon: 'info', title: `${count} marked as ${markAsRead ? 'read' : 'unread'}.`, showConfirmButton: false, timer: 2000 });
       },
 
+      generatePhHolidays(year) {
+        let holidays = [
+           `${year}-01-01`, // New Year's Day
+           `${year}-02-25`, // EDSA Revolution Anniversary
+           `${year}-04-09`, // Araw ng Kagitingan
+           `${year}-05-01`, // Labor Day
+           `${year}-06-12`, // Independence Day
+           `${year}-08-21`, // Ninoy Aquino Day
+           `${year}-11-01`, // All Saints' Day
+           `${year}-11-02`, // All Souls' Day
+           `${year}-11-30`, // Bonifacio Day
+           `${year}-12-08`, // Immaculate Conception
+           `${year}-12-24`, // Christmas Eve
+           `${year}-12-25`, // Christmas Day
+           `${year}-12-30`, // Rizal Day
+           `${year}-12-31`  // New Year's Eve
+        ];
+
+        // National Heroes Day: Last Monday of August
+        let d = new Date(year, 7, 31); 
+        while(d.getDay() !== 1) { d.setDate(d.getDate() - 1); }
+        holidays.push(`${year}-08-${d.getDate().toString().padStart(2, '0')}`);
+
+        // Computus algorithm for Easter Sunday (Maundy Thu, Good Fri, Black Sat)
+        let a = year % 19, b = Math.floor(year / 100), c = year % 100,
+            d_val = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25),
+            g = Math.floor((b - f + 1) / 3), h = (19 * a + b - d_val - g + 15) % 30,
+            i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7,
+            m = Math.floor((a + 11 * h + 22 * l) / 451),
+            month = Math.floor((h + l - 7 * m + 114) / 31),
+            day = ((h + l - 7 * m + 114) % 31) + 1;
+
+        let easter = new Date(year, month - 1, day);
+        let maundy = new Date(easter); maundy.setDate(easter.getDate() - 3);
+        let goodFri = new Date(easter); goodFri.setDate(easter.getDate() - 2);
+        let blackSat = new Date(easter); blackSat.setDate(easter.getDate() - 1);
+
+        const formatDate = (dt) => `${dt.getFullYear()}-${(dt.getMonth()+1).toString().padStart(2,'0')}-${dt.getDate().toString().padStart(2,'0')}`;
+        holidays.push(formatDate(maundy), formatDate(goodFri), formatDate(blackSat));
+
+        return holidays;
+      },
+      
+      isNonWorkingDay(dateObj) {
+        const day = dateObj.getDay();
+        if (day === 0 || day === 6) return true; // Weekend
+
+        const year = dateObj.getFullYear();
+        const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+        const date = dateObj.getDate().toString().padStart(2, '0');
+        const dateString = `${year}-${month}-${date}`;
+
+        if (!this.holidayCache[year]) {
+            this.holidayCache[year] = this.generatePhHolidays(year);
+        }
+        return this.holidayCache[year].includes(dateString);
+      },
+
+      getBusinessTAT(startTimestamp, endTimestamp) {
+        if (!startTimestamp || !endTimestamp) return '';
+        let start = new Date(startTimestamp);
+        let end = new Date(endTimestamp);
+
+        if (start > end) { let temp = start; start = end; end = temp; }
+
+        let totalMs = end.getTime() - start.getTime();
+        let current = new Date(start);
+        
+        // Subtract 24hrs for every full non-working day encountered
+        while (current < end) {
+            let nextDay = new Date(current);
+            nextDay.setDate(nextDay.getDate() + 1);
+            nextDay.setHours(0,0,0,0);
+
+            let chunkEnd = nextDay < end ? nextDay : end;
+            let chunkMs = chunkEnd.getTime() - current.getTime();
+
+            if (this.isNonWorkingDay(current)) {
+                totalMs -= chunkMs;
+            }
+            current = nextDay;
+        }
+
+        if (totalMs < 0) totalMs = 0;
+
+        const d = Math.floor(totalMs / (1000 * 60 * 60 * 24));
+        const h = Math.floor((totalMs / (1000 * 60 * 60)) % 24);
+        const m = Math.floor((totalMs / 1000 / 60) % 60);
+
+        if (d > 0) return `${d}d ${h}h`;
+        if (h > 0) return `${h}h ${m}m`;
+        if (m > 0) return `${m}m`;
+        return `< 1m`;
+      },
+
       getRequestStatus(req) {
          if (this.isFinalApproved(req)) return 'approved'; 
          if (this.canActionRequest(req)) return 'pending'; 
@@ -1269,15 +1480,19 @@
             }
          }
 
-         let diff = end - start;
-         if (diff < 0) diff = 0;
-         if (diff === 0 && status === 'done' && this.isRequestor) return "Submitted";
-
-         const d = Math.floor(diff / (1000 * 60 * 60 * 24)), h = Math.floor((diff / (1000 * 60 * 60)) % 24), m = Math.floor((diff / 1000 / 60) % 60);
-         if (d > 0) return `${d}d ${h}h`;
-         if (h > 0) return `${h}h ${m}m`;
-         if (m > 0) return `${m}m`;
-         return `< 1m`;
+         if (start === end && status === 'done' && this.isRequestor) return "Submitted";
+         return this.getBusinessTAT(start, end);
+      },
+      
+      // Get TAT specifically for an individual history log step
+      getLogTAT(log, index) {
+        let startTime;
+        if (index === 0) {
+            startTime = this.activeRequest.timestamp;
+        } else {
+            startTime = this.activeRequest.history[index - 1].timestamp;
+        }
+        return this.getBusinessTAT(startTime, log.timestamp);
       },
 
       fetchServerData() {
@@ -1344,7 +1559,7 @@
                 if (updatedActiveRequest && updatedActiveRequest.history.length > this.activeRequest.history.length) {
                     this.activeRequest.history = updatedActiveRequest.history;
                     this.$nextTick(() => {
-                        const container = document.getElementById('detailViewScroll');
+                        const container = document.getElementById('historyScrollBox');
                         if (container) container.scrollTop = container.scrollHeight;
                     });
                 }
@@ -1357,12 +1572,20 @@
         }
       },
       clearSearch() { this.searchInput = ''; },
+      
       viewRequestDetails(requestObject) {
         this.markReadUnreadSingle(requestObject, true, false);
         this.activeRequest = requestObject;
         this.actionMode = null; 
         this.formInput.remarks = ''; this.formInput.forwardEmail = ''; this.formInput.ccEmail = ''; this.formInput.fileObj = null;
+        
+        this.fetchFileNamesForActiveRequest();
+        
         this.scrollToTop('detailViewScroll');
+        setTimeout(() => {
+            const container = document.getElementById('historyScrollBox');
+            if (container) container.scrollTop = container.scrollHeight;
+        }, 100);
       },
       returnToInbox() { this.activeRequest = null; this.selectedRequests = []; this.actionMode = null; },
       verifyLinkFormat(urlText) { return !!new RegExp('^(https?:\\/\\/)?((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|((\\d{1,3}\\.){3}\\d{1,3}))(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*(\\?[;&a-z\\d%_.~+=-]*)?(\\#[-a-z\\d_]*)?$','i').test(urlText); },
@@ -1460,6 +1683,7 @@
           
           if (responseData.fileLink) payloadData.fileLink = responseData.fileLink;
           if (responseData.ballWith) payloadData.ballWith = responseData.ballWith;
+          if (responseData.fileName) payloadData.fileName = responseData.fileName; 
 
           this.activeRequest.history.push({ timestamp: new Date().toISOString(), ...payloadData });
           
@@ -1476,7 +1700,7 @@
           this.formInput.fileObj = null;
 
           this.$nextTick(() => {
-              const container = document.getElementById('detailViewScroll');
+              const container = document.getElementById('historyScrollBox');
               if (container) container.scrollTop = container.scrollHeight;
           });
         };
@@ -1493,7 +1717,7 @@
           }).processAction(payloadData);
         } else {
           setTimeout(() => {
-            handleSuccess({ fileLink: 'https://dummy.com', ballWith: 'Testing Dept' });
+            handleSuccess({ fileLink: 'https://dummy.com', ballWith: 'Testing Dept', fileName: this.formInput.fileObj ? this.formInput.fileObj.fileName : '' });
           }, 1500);
         }
       }
