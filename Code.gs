@@ -1,6 +1,6 @@
 const DB_MAIN_ID = '1YAvZmCdWXbjOcJA-uUY40e6qVqzyiHcB06NpiPcz6y4';
 const DB_USER_ID = '1dBO8ThI7FEKb24D9sPVWokfXLuWUx5aCQvisrT9wBvI';
-const DB_STATES_ID = '1kCXHSBnGlK2ZYVqIA83fo6LCCYc4dOV1-KvGzy8kZP0';
+const DB_STATES_ID = '1kCXHSBnGlK2ZYVqIA83fo6LCCYc4dOV1-KvGzy8kZP0'; 
 const UPLOAD_FOLDER_ID = '1ctjUaEFZPe7YLGu1GlFB7BPwWPQeB0SK';
 
 function doGet() {
@@ -21,6 +21,23 @@ function hashPassword(password) {
     hexStr += byteStr;
   }
   return hexStr;
+}
+
+function getDriveFileNames(urls) {
+  const result = {};
+  urls.forEach(url => {
+    if (!url) return;
+    try {
+      const match = url.match(/[-\w]{25,}/); // Extract Drive File ID
+      if (match) {
+        const file = DriveApp.getFileById(match[0]);
+        result[url] = file.getName();
+      }
+    } catch (e) {
+      result[url] = 'Unknown_File';
+    }
+  });
+  return JSON.stringify(result);
 }
 
 function requestOTP(email, intent) {
@@ -186,7 +203,7 @@ function getInboxData(userEmail) {
 
   const ssMain = SpreadsheetApp.openById(DB_MAIN_ID);
   const ssUser = SpreadsheetApp.openById(DB_USER_ID);
-  const ssStates = SpreadsheetApp.openById(DB_STATES_ID);
+  const ssStates = SpreadsheetApp.openById(DB_STATES_ID); 
   
   const sheet = ssMain.getSheetByName('SUBMISSIONS');
   const logSheet = ssMain.getSheetByName('ACTION_LOGS');
@@ -224,7 +241,7 @@ function getInboxData(userEmail) {
     const logData = logSheet.getDataRange().getValues();
     logData.shift(); 
     actionLogs = logData.map(row => {
-      return { timestamp: row[0], rfpNo: row[1], actorEmail: row[2], action: row[3], remarks: row[4], targetEmail: row[5], ccEmail: row[6] || '', fileLink: row[7] || '', ballWith: row[8] || '' };
+      return { timestamp: row[0], rfpNo: row[1], actorEmail: row[2], action: row[3], remarks: row[4], targetEmail: row[5], ccEmail: row[6] || '', fileLink: row[7] || '', ballWith: row[8] || '', fileName: row[9] || '' };
     });
   }
 
@@ -285,6 +302,7 @@ function getInboxData(userEmail) {
         soaAmount: row[19] || '',            
         status: row[20] || 'Pending',        
         fileLink: row[21] || '',             
+        fileName: '', // Will be fetched asynchronously if missing
         isRead: false,
         dbState: state, 
         initialBallWith: initialBallWith,
@@ -298,7 +316,7 @@ function getInboxData(userEmail) {
 
 function syncUserTicketStates(email, updatesArray) {
   try {
-    const ss = SpreadsheetApp.openById(DB_STATES_ID);
+    const ss = SpreadsheetApp.openById(DB_STATES_ID); 
     let sheet = ss.getSheetByName('USER_TICKET_STATES');
     if (!sheet) {
       sheet = ss.insertSheet('USER_TICKET_STATES');
@@ -338,11 +356,10 @@ function processAction(payload) {
     
     if (!logSheet) {
       logSheet = ssMain.insertSheet('ACTION_LOGS');
-      logSheet.appendRow(['Timestamp', 'RFP/PEF No.', 'Actor Email', 'Action Taken', 'Remarks/Comments', 'Target Email', 'Cc Email', 'File Upload', 'Ball With']);
-      logSheet.getRange("A1:I1").setFontWeight("bold");
+      logSheet.appendRow(['Timestamp', 'RFP/PEF No.', 'Actor Email', 'Action Taken', 'Remarks/Comments', 'Target Email', 'Cc Email', 'File Upload', 'Ball With', 'File Name']);
+      logSheet.getRange("A1:J1").setFontWeight("bold");
     }
 
-    // Look up the target's department for Ball With tracking
     let ballWithDept = 'Unknown';
     if (payload.targetEmail) {
         const firstTarget = payload.targetEmail.split(',')[0].trim().toLowerCase();
@@ -352,7 +369,7 @@ function processAction(payload) {
             const userData = userSheet.getDataRange().getValues();
             for (let i = 1; i < userData.length; i++) {
                 if (userData[i][2] && userData[i][2].toString().toLowerCase() === firstTarget) {
-                    ballWithDept = userData[i][9] || 'Unknown'; // Fetch Col J
+                    ballWithDept = userData[i][9] || 'Unknown'; 
                     break;
                 }
             }
@@ -360,17 +377,19 @@ function processAction(payload) {
     }
 
     let fileUrl = '';
+    let uploadedFileName = '';
     if (payload.fileObj && payload.fileObj.fileData) {
       const folder = DriveApp.getFolderById(UPLOAD_FOLDER_ID);
       const decodedData = Utilities.base64Decode(payload.fileObj.fileData);
       const blob = Utilities.newBlob(decodedData, payload.fileObj.mimeType, payload.fileObj.fileName);
       const file = folder.createFile(blob);
       fileUrl = file.getUrl();
+      uploadedFileName = payload.fileObj.fileName;
     }
 
-    logSheet.appendRow([ new Date(), payload.rfpNo, payload.actorEmail, payload.action, payload.remarks, payload.targetEmail, payload.ccEmail, fileUrl, ballWithDept ]);
+    logSheet.appendRow([ new Date(), payload.rfpNo, payload.actorEmail, payload.action, payload.remarks, payload.targetEmail, payload.ccEmail, fileUrl, ballWithDept, uploadedFileName ]);
     
-    return JSON.stringify({ success: true, fileLink: fileUrl, ballWith: ballWithDept });
+    return JSON.stringify({ success: true, fileLink: fileUrl, ballWith: ballWithDept, fileName: uploadedFileName });
   } catch (error) {
     return JSON.stringify({ success: false, message: error.toString() });
   }
